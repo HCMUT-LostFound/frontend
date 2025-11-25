@@ -9,6 +9,7 @@ export default function TabLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false,
+                tabBarActiveTintColor: "blue",
             }}
             tabBar={(props) => <CustomTabBar {...props} />}
         >
