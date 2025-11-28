@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -11,7 +11,9 @@ export default function TabLayout() {
             screenOptions={{
                 headerShown: false,
                 tabBarActiveTintColor: "#2B6CB0",
-                tabBarInactiveTintColor: "#666",
+                tabBarInactiveTintColor: "black",
+                // tabBarActiveBackgroundColor: 'transparent',
+                // tabBarInactiveBackgroundColor: 'transparent',
                 tabBarShowLabel: true,
                 tabBarStyle: {
                     height: 70,
@@ -34,9 +36,9 @@ export default function TabLayout() {
                     tabBarLabel: 'Home',
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons 
-                            name={focused ? 'home' : 'home-outline'} 
+                            name={focused ? "home-outline" : "home-outline"}
                             size={24} 
-                            color={color} 
+                            color={focused ? '#2B6CB0' : 'black'}
                         />
                     ),
                 }}
@@ -47,24 +49,21 @@ export default function TabLayout() {
                     tabBarLabel: 'Chat',
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons 
-                            name={focused ? 'chatbubbles' : 'chatbubbles-outline'} 
+                            name={focused ? "chatbubble-outline" : "chatbubble-outline"} 
                             size={24} 
-                            color={color} 
+                            color={focused ? '#2B6CB0' : 'black'} 
                         />
                     ),
+                    
                 }}
             />
             <Tabs.Screen 
                 name='action' 
                 options={{
                     tabBarLabel: '',
-                    tabBarIcon: ({ color }) => (
+                    tabBarIcon: ({ color, focused }) => (
                         <View style={styles.middleButton}>
-                            <MaterialCommunityIcons 
-                                name="plus" 
-                                size={32} 
-                                color="white" 
-                            />
+                           <Ionicons name="add" size={24} color="white" />
                         </View>
                     ),
                 }}
@@ -75,9 +74,9 @@ export default function TabLayout() {
                     tabBarLabel: 'Notification',
                     tabBarIcon: ({ color, focused }) => (
                         <Ionicons 
-                            name={focused ? 'notifications' : 'notifications-outline'} 
+                            name={focused ? "notifications-outline" : "notifications-outline"} 
                             size={24} 
-                            color={color} 
+                            color={focused ? '#2B6CB0' : 'black'} 
                         />
                     ),
                 }}
@@ -87,11 +86,11 @@ export default function TabLayout() {
                 options={{
                     tabBarLabel: 'Profile',
                     tabBarIcon: ({ color, focused }) => (
-                        <Ionicons 
-                            name={focused ? 'person' : 'person-outline'} 
-                            size={24} 
-                            color={color} 
-                        />
+                      <Ionicons 
+                          name={focused ? "person-circle-outline" : "person-circle-outline"} 
+                          size={24} 
+                          color={focused ? '#2B6CB0' : 'black'} 
+                      />
                     ),
                 }}
             />
@@ -120,7 +119,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         };
 
         const icon = descriptors[route.key]?.options?.tabBarIcon?.({
-          color: isFocused ? '#2B6CB0' : '#666',
+          color: isFocused ? '#2B6CB0' : 'black',
           size: 24,
           focused: isFocused,
         });
@@ -143,7 +142,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
                   <Text 
                     style={[
                       styles.tabLabel,
-                      { color: isFocused ? '#2B6CB0' : '#666' }
+                      { color: isFocused ? '#2B6CB0' : 'black' }
                     ]}
                   >
                     {label}
@@ -161,8 +160,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 const styles = StyleSheet.create({
     tabBar: {
         flexDirection: 'row',
-        height: 70,
+        height: 89.5,
         backgroundColor: 'white',
+        paddingBottom: 15,
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
         shadowColor: '#000',
@@ -185,12 +185,12 @@ const styles = StyleSheet.create({
         width: width / 5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: -20,
+        marginTop: -10,
     },
     middleButton: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 39,
+        height: 39,
+        borderRadius: 20,
         backgroundColor: '#2B6CB0',
         alignItems: 'center',
         justifyContent: 'center',
@@ -204,5 +204,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
         fontFamily: 'System',
+        color: 'black',
     },
 });
