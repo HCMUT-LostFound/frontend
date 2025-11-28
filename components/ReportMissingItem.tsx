@@ -172,7 +172,7 @@ const ReportMissingItem = () => {
                 numberOfLines={4}
                 placeholderTextColor="#A0AEC0"
               />
-              <Ionicons name="pencil" size={20} color="#A0AEC0" style={[styles.inputIcon, {top: 10}]} />
+              <Ionicons name="pencil" size={20} color="#A0AEC0" style={[styles.inputIcon, {top: 20}]} />
             </View>
           </View>
 

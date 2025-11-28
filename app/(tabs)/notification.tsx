@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
-import React, { useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import React, { useState } from 'react'
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 type TabType = 'message' | 'lost' | 'found'
 
@@ -115,25 +115,27 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
     marginBottom: 10,
   },
   tab: {
+    width: '32%',
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginRight: 10,
+    alignItems: 'center',
+    borderRadius: 8,
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#1E3A8A',
+    borderBottomColor: '#2B6CB0',
   },
   tabText: {
     fontSize: 14,
     color: '#999',
   },
   activeTabText: {
-    color: '#1E3A8A',
+    color: '#2B6CB0',
     fontWeight: '600',
   },
   listContainer: {
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#2B6CB0',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 15,

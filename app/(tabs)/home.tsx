@@ -67,25 +67,25 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* Tabs */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'lost' && styles.activeTab]}
-            onPress={() => setActiveTab('lost')}
-          >
-            <Text style={[styles.tabText, activeTab === 'lost' && styles.activeTabText]}>
-              Đồ bị mất
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'found' && styles.activeTab]}
-            onPress={() => setActiveTab('found')}
-          >
-            <Text style={[styles.tabText, activeTab === 'found' && styles.activeTabText]}>
-              Đồ nhặt được
-            </Text>
-          </TouchableOpacity>
-        </View>
+       {/* Tabs */}
+             <View style={styles.tabContainer}>
+               <TouchableOpacity
+                 style={[styles.tab, activeTab === 'lost' && styles.activeTab]}
+                 onPress={() => setActiveTab('lost')}
+               >
+                 <Text style={[styles.tabText, activeTab === 'lost' && styles.activeTabText]}>
+                   Đồ bị mất
+                 </Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 style={[styles.tab, activeTab === 'found' && styles.activeTab]}
+                 onPress={() => setActiveTab('found')}
+               >
+                 <Text style={[styles.tabText, activeTab === 'found' && styles.activeTabText]}>
+                   Đồ nhặt được
+                 </Text>
+               </TouchableOpacity>
+             </View>
 
         {/* Item List */}
         <View style={styles.itemList}>
@@ -137,12 +137,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#1E3A8A',
+    borderColor: '#2B6CB0',
   },
   logoText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1E3A8A',
+    color: '#2B6CB0',
   },
   logoImage: {
     width: 150,
@@ -192,23 +192,28 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    marginBottom: 10,
   },
   tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginRight: 10,
+    width: '48%',
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 0,
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#1E3A8A',
+    borderBottomColor: '#2B6CB0',
   },
   tabText: {
     fontSize: 14,
-    color: '#999',
+    color: '#666',
+    fontWeight: '500',
   },
   activeTabText: {
-    color: '#1E3A8A',
+    color: '#2B6CB0',
     fontWeight: '600',
   },
   itemList: {

@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, KeyboardAvoidingView, Platform } from 'react-native'
-import React, { useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import React, { useState } from 'react'
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 interface Conversation {
   id: string
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1E1E1E',
+    color: '#2B6CB0',
     marginTop: 20,
     marginBottom: 20,
   },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   conversationName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1E1E1E',
+    color: '#2B6CB0',
     marginBottom: 4,
   },
   conversationMessage: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   chatHeaderName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1E1E1E',
+    color: '#2B6CB0',
   },
   messagesContainer: {
     flex: 1,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   itemInfoBold: {
     fontWeight: 'bold',
-    color: '#1E1E1E',
+    color: '#2B6CB0',
   },
   messageItem: {
     marginBottom: 20,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   messageSender: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#1E1E1E',
+    color: '#2B6CB0',
     marginRight: 10,
   },
   messageTime: {

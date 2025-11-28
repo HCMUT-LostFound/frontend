@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal } from 'react-native'
-import React, { useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import React, { useState } from 'react'
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 type TabType = 'lost' | 'found'
 
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#2B6CB0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#2B6CB0',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
@@ -248,14 +248,14 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#1E3A8A',
+    borderBottomColor: '#2B6CB0',
   },
   tabText: {
     fontSize: 14,
     color: '#999',
   },
   activeTabText: {
-    color: '#1E3A8A',
+    color: '#2B6CB0',
     fontWeight: '600',
   },
   listContainer: {
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 10,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#2B6CB0',
   },
   itemInfo: {
     flex: 1,
@@ -292,11 +292,11 @@ const styles = StyleSheet.create({
   },
   itemDate: {
     fontSize: 14,
-    color: '#1E3A8A',
+    color: '#2B6CB0',
     marginBottom: 10,
   },
   actionButton: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#2B6CB0',
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 25,
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#2B6CB0',
     alignItems: 'center',
   },
   confirmButtonText: {

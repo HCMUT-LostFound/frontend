@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -17,16 +17,7 @@ export default function ActionScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        {/* <Image 
-          source={require('../../assets/images/logo.jpg')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.headerTitle}>Chào mừng bạn đến với</Text>
-        <Text style={styles.appName}>HCMUT Lost and Found</Text>
-        <Text style={styles.headerSubtitle}>Hãy chọn một trong các tùy chọn bên dưới để bắt đầu</Text> */}
-      </View>
+      
 
       <View style={styles.buttonsContainer}>
         <TouchableOpacity 
