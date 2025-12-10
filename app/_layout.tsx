@@ -1,8 +1,6 @@
-import { Stack } from "expo-router";
-import {Text} from "react-native"
-import LoginScreen from "@/components/LoginScreen";
 import { ClerkProvider, SignedIn, SignedOut } from "@clerk/clerk-expo";
-import * as SecureStore from "expo-secure-store"
+import { Stack } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 
 const tokenCache = {
   async getToken(key: string) {
@@ -28,13 +26,18 @@ export default function RootLayout() {
     <ClerkProvider tokenCache={tokenCache} publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <SignedIn>
         <Stack screenOptions={{
-          headerShown: false
+          headerShown: false,
         }}>
           <Stack.Screen name="(tabs)" />
         </Stack>
       </SignedIn>
       <SignedOut>
-        <LoginScreen/>
+        <Stack screenOptions={{
+          headerShown: false,
+        }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="login" />
+        </Stack>
       </SignedOut>
     </ClerkProvider>
   );
