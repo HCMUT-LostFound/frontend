@@ -1,6 +1,6 @@
-import { Redirect } from "expo-router";
-import { Text, View } from "react-native";
+import OnBoarding from '@/components/OnBoarding';
+import React from 'react';
 
 export default function Index() {
-  return <Redirect href={'/home'}/>
+  return <OnBoarding />;
 }
