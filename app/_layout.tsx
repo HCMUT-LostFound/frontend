@@ -1,6 +1,7 @@
 import { ClerkProvider, SignedIn, SignedOut } from "@clerk/clerk-expo";
 import { Stack } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import AuthSync from "@/components/AuthSync";
 
 const tokenCache = {
   async getToken(key: string) {
@@ -24,6 +25,7 @@ const tokenCache = {
 export default function RootLayout() {
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+      <AuthSync />
       <SignedIn>
         <Stack screenOptions={{
           headerShown: false,
