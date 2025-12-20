@@ -2,6 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import React, { useState } from 'react'
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useProfile } from '@/hooks/useProfile'
+import { useAuth } from '@clerk/clerk-expo'
 
 type TabType = 'lost' | 'found'
 
@@ -30,7 +32,8 @@ export default function Profile() {
   const [lostItems, setLostItems] = useState(SAMPLE_LOST_ITEMS)
   const [foundItems, setFoundItems] = useState(SAMPLE_FOUND_ITEMS)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-
+  const profile = useProfile()
+  const { signOut } = useAuth()
   const handleButtonPress = (itemId: string, type: 'found' | 'return') => {
     setSelectedItemId(itemId)
     setModalType(type)
@@ -60,7 +63,14 @@ export default function Profile() {
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={40} color="#999" />
+            {profile?.avatarUrl ? (
+              <Image
+                source={{ uri: profile.avatarUrl }}
+                style={{ width: 80, height: 80, borderRadius: 40 }}
+              />
+            ) : (
+              <Ionicons name="person" size={40} color="#999" />
+            )}
           </View>
           <TouchableOpacity style={styles.editAvatarButton}>
             <Ionicons name="pencil" size={14} color="#fff" />
@@ -68,12 +78,21 @@ export default function Profile() {
         </View>
         <View style={styles.profileInfo}>
           <View style={styles.nameRow}>
-            <Text style={styles.userName}>Nguyễn Văn A</Text>
+            <Text style={styles.userName}>{profile?.fullName ?? 'User'}</Text>
             <TouchableOpacity>
               <Ionicons name="pencil" size={16} color="#333" />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity style={styles.logoutButton}
+            onPress={async () => {
+              try {
+                await signOut()
+                console.log('Signed out')
+              } catch (err) {
+                console.error('Logout error:', err)
+              }
+            }}
+          >
             <Text style={styles.logoutText}>Đăng xuất</Text>
             <Ionicons name="log-out-outline" size={18} color="#fff" />
           </TouchableOpacity>
@@ -115,7 +134,7 @@ export default function Profile() {
                 <Text style={styles.itemDate}>
                   {activeTab === 'lost' ? `Ngày báo mất: ${item.date}` : `Ngày nhặt được: ${item.date}`}
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.actionButton}
                   onPress={() => handleButtonPress(item.id, activeTab === 'lost' ? 'found' : 'return')}
                 >
@@ -140,18 +159,18 @@ export default function Profile() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Xác nhận</Text>
             <Text style={styles.modalMessage}>
-              {modalType === 'found' 
-                ? 'Bạn có chắc chắn đã tìm thấy món đồ này?' 
+              {modalType === 'found'
+                ? 'Bạn có chắc chắn đã tìm thấy món đồ này?'
                 : 'Bạn có chắc chắn đã trả lại món đồ này?'}
             </Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setShowModal(false)}
               >
                 <Text style={styles.cancelButtonText}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.confirmButton}
                 onPress={handleConfirm}
               >

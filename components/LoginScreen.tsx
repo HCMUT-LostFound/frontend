@@ -32,11 +32,11 @@ export default function LoginScreen() {
                     // Check for session tasks and navigate to custom UI to help users resolve them
                     // See https://clerk.com/docs/guides/development/custom-flows/overview#session-tasks
                     navigate: async ({ session }) => {
-                        // if (session?.currentTask) {
-                        //     console.log(session?.currentTask)
-                        //     router.push('/')
-                        //     return
-                        // }
+                        if (session?.currentTask) {
+                            console.log(session?.currentTask)
+                            router.push('/')
+                            return
+                        }
                         // const token = await getToken()
 
                         // if (!token) {
@@ -50,7 +50,7 @@ export default function LoginScreen() {
                         //     },
                         // })
 
-                        // router.push('/(tabs)/home')
+                        router.push('/(tabs)/home')
                     },
                 })
             } else {
