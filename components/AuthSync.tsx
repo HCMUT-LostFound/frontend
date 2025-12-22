@@ -2,54 +2,32 @@ import { useAuth, useUser } from '@clerk/clerk-expo'
 import { useEffect, useRef } from 'react'
 import {jwtDecode} from 'jwt-decode'
 
-const API_BASE = 'http://10.0.212.196:8080'
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 
 type JwtPayload = {
   sub: string
 }
 
 export default function AuthSync() {
-  const { isSignedIn, getToken } = useAuth()
+  const { isSignedIn, isLoaded, getToken } = useAuth()
   const { user } = useUser()
 
   const lastSyncedUserId = useRef<string | null>(null)
   const syncing = useRef(false)
 
   useEffect(() => {
-    if (!isSignedIn || !user?.id) return
+    if (!isSignedIn || !user?.id || !isLoaded) return
     if (syncing.current) return
-
+    if (lastSyncedUserId.current === user.id) return
     const sync = async () => {
       syncing.current = true
 
-      let token: string | null = null
-
-      // 🔁 retry + verify token belongs to user
-      for (let i = 0; i < 6; i++) {
-        token = await getToken()
-        if (!token) {
-          await delay(300)
-          continue
-        }
-
-        const payload = jwtDecode<JwtPayload>(token)
-        if (payload.sub === user.id) break
-
-        token = null
-        await delay(300)
-      }
-
+      const token = await getToken()
       if (!token) {
-        console.log('[AuthSync] Token does not match user.id')
         syncing.current = false
         return
       }
-
-      if (lastSyncedUserId.current === user.id) {
-        syncing.current = false
-        return
-      }
-
+      console.log('[AuthSync] token =', token)
       const res = await fetch(`${API_BASE}/api/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -65,7 +43,7 @@ export default function AuthSync() {
     }
 
     sync()
-  }, [isSignedIn, user?.id])
+  }, [isSignedIn, isLoaded, user?.id])
 
   return null
 }
