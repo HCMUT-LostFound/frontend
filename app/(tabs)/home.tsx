@@ -1,36 +1,11 @@
 import Feather from '@expo/vector-icons/Feather'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@clerk/clerk-expo'
+import { useFocusEffect } from '@react-navigation/native'
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
-const SAMPLE_ITEMS = [
-  {
-    id: '1',
-    title: 'Balo da',
-    location: 'CS2, H1-304',
-    date: '26/10/2025',
-    tags: ['Ba lô', 'Da', 'Nâu'],
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-  },
-  {
-    id: '2',
-    title: 'Balo da',
-    location: 'CS2, H1-304',
-    date: '26/10/2025',
-    tags: ['Ba lô', 'Da', 'Nâu'],
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-  },
-  {
-    id: '3',
-    title: 'Balo da',
-    location: 'CS2, H1-304',
-    date: '26/10/2025',
-    tags: ['Ba lô', 'Da', 'Nâu'],
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-  },
-]
 // const { getToken } = useAuth()
 async function fetchPublicItems(token: string) {
 
@@ -54,29 +29,26 @@ export default function Home() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const { getToken } = useAuth()
+  const loadItems = async () => {
+    setLoading(true)
+    try {
+      const token = await getToken()
+      if (!token) return
 
-  useEffect(() => {
-    async function loadItems() {
-      setLoading(true)
-      try {
-        const token = await getToken()
-
-        if (!token) {
-          console.warn('No auth token yet')
-          return
-        }
-
-        const data = await fetchPublicItems(token)
-        setItems(data)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+      const data = await fetchPublicItems(token)
+      setItems(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useFocusEffect(
+  useCallback(() => {
     loadItems()
   }, [activeTab])
+)
   const filteredItems = items.filter(
     (item) => item.type === activeTab
   )

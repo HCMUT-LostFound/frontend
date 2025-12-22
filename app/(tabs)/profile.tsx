@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useProfile } from '@/hooks/useProfile'
 import { useAuth } from '@clerk/clerk-expo'
 
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 type TabType = 'lost' | 'found'
 
 interface Item {
@@ -15,44 +16,122 @@ interface Item {
   type: TabType
 }
 
-const SAMPLE_LOST_ITEMS: Item[] = [
-  { id: '1', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
-  { id: '2', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
-  { id: '3', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
-]
+// const SAMPLE_LOST_ITEMS: Item[] = [
+//   { id: '1', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
+//   { id: '2', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
+//   { id: '3', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
+// ]
 
-const SAMPLE_FOUND_ITEMS: Item[] = [
-  { id: '4', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'found' },
-]
+// const SAMPLE_FOUND_ITEMS: Item[] = [
+//   { id: '4', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'found' },
+// ]
+
+type ItemType = 'lost' | 'found'
+
+interface Item {
+  id: string
+  title: string
+  type: ItemType
+  imageUrls: string[] | null
+  lostAt: string | null
+}
+
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<TabType>('lost')
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState<'found' | 'return'>('found')
-  const [lostItems, setLostItems] = useState(SAMPLE_LOST_ITEMS)
-  const [foundItems, setFoundItems] = useState(SAMPLE_FOUND_ITEMS)
+  // const [lostItems, setLostItems] = useState(SAMPLE_LOST_ITEMS)
+  // const [foundItems, setFoundItems] = useState(SAMPLE_FOUND_ITEMS)
+  const [items, setItems] = useState<Item[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const profile = useProfile()
-  const { signOut } = useAuth()
+  const { signOut, isLoaded, isSignedIn } = useAuth()
+  const { getToken } = useAuth()
+
   const handleButtonPress = (itemId: string, type: 'found' | 'return') => {
     setSelectedItemId(itemId)
     setModalType(type)
     setShowModal(true)
   }
+  const fetchMyItems = async () => {
+    try {
+      const token = await getToken()
+      if (!token) return
 
-  const handleConfirm = () => {
-    if (selectedItemId) {
-      if (modalType === 'found') {
-        setLostItems(prev => prev.filter(item => item.id !== selectedItemId))
-      } else {
-        setFoundItems(prev => prev.filter(item => item.id !== selectedItemId))
+      const res = await fetch(`${API_BASE}/api/items/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!res.ok) {
+        console.error('Failed to fetch my items')
+        return
       }
+
+      const data: Item[] = await res.json()
+      setItems(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
-    setShowModal(false)
-    setSelectedItemId(null)
   }
 
-  const currentItems = activeTab === 'lost' ? lostItems : foundItems
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return
+    fetchMyItems()
+  }, [isLoaded, isSignedIn])
+  // const handleConfirm = () => {
+  //   if (selectedItemId) {
+  //     if (modalType === 'found') {
+  //       setLostItems(prev => prev.filter(item => item.id !== selectedItemId))
+  //     } else {
+  //       setFoundItems(prev => prev.filter(item => item.id !== selectedItemId))
+  //     }
+  //   }
+  //   setShowModal(false)
+  //   setSelectedItemId(null)
+  // }
+
+  const handleConfirm = async () => {
+    if (!selectedItemId) return
+
+    try {
+      const token = await getToken()
+      if (!token) return
+
+      const res = await fetch(
+        `${API_BASE}/api/items/${selectedItemId}/confirm`,
+        {
+          method: 'POST', // backend của bạn dùng POST
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!res.ok) {
+        const text = await res.text()
+        console.error('Confirm failed:', text)
+        return
+      }
+
+      // ✅ thành công → đóng modal + reload list
+      setShowModal(false)
+      setSelectedItemId(null)
+      fetchMyItems()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const currentItems = items.filter(
+    (item) => item.type === activeTab
+  )
 
   return (
     <SafeAreaView style={styles.container}>
@@ -120,33 +199,56 @@ export default function Profile() {
       </View>
 
       {/* Item List */}
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.listContainer}>
-        {currentItems.length === 0 ? (
-          <Text style={styles.emptyText}>
-            {activeTab === 'lost' ? 'Hiện không có đồ bị mất' : 'Hiện không có đồ nhặt được'}
-          </Text>
-        ) : (
-          currentItems.map((item) => (
-            <View key={item.id} style={styles.itemCard}>
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemDate}>
-                  {activeTab === 'lost' ? `Ngày báo mất: ${item.date}` : `Ngày nhặt được: ${item.date}`}
+      {loading ? (
+        <Text style={styles.emptyText}>Đang tải dữ liệu...</Text>
+      ) : currentItems.length === 0 ? (
+        <Text style={styles.emptyText}>
+          {activeTab === 'lost'
+            ? 'Hiện không có đồ bị mất'
+            : 'Hiện không có đồ nhặt được'}
+        </Text>
+      ) : (
+        currentItems.map((item) => (
+          <View key={item.id} style={styles.itemCard}>
+            <Image
+              source={{
+                uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/100',
+              }}
+              style={styles.itemImage}
+            />
+
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName}>{item.title}</Text>
+
+              <Text style={styles.itemDate}>
+                {activeTab === 'lost'
+                  ? `Ngày báo mất: ${item.lostAt
+                    ? new Date(item.lostAt).toLocaleDateString('vi-VN')
+                    : '—'
+                  }`
+                  : `Ngày nhặt được: ${item.lostAt
+                    ? new Date(item.lostAt).toLocaleDateString('vi-VN')
+                    : '—'
+                  }`}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => {setSelectedItemId(item.id)
+                    setModalType(activeTab === 'lost' ? 'found' : 'return')
+                    setShowModal(true)}
+                  
+                }
+              >
+                <Text style={styles.actionButtonText}>
+                  {activeTab === 'lost' ? 'Đã tìm thấy' : 'Đã trả lại'}
                 </Text>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => handleButtonPress(item.id, activeTab === 'lost' ? 'found' : 'return')}
-                >
-                  <Text style={styles.actionButtonText}>
-                    {activeTab === 'lost' ? 'Đã tìm thấy' : 'Đã trả lại'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             </View>
-          ))
-        )}
-      </ScrollView>
+          </View>
+        ))
+      )}
+
 
       {/* Confirmation Modal */}
       <Modal
@@ -172,7 +274,7 @@ export default function Profile() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmButton}
-                onPress={handleConfirm}
+              onPress={handleConfirm}
               >
                 <Text style={styles.confirmButtonText}>Xác nhận</Text>
               </TouchableOpacity>
