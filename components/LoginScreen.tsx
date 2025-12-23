@@ -1,11 +1,11 @@
 import { useWarmUpBrowser } from '@/hooks/useWarmUpBrowser'
-import { useSSO } from '@clerk/clerk-expo'
+import { useAuth, useSSO } from '@clerk/clerk-expo'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import * as AuthSession from 'expo-auth-session'
 import { router } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
 import React, { useCallback } from 'react'
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 WebBrowser.maybeCompleteAuthSession()
 
 // Base design dimensions (giả định portrait)
@@ -48,6 +48,8 @@ export default function LoginScreen() {
   useWarmUpBrowser()
 
   const { startSSOFlow } = useSSO()
+  const {getToken, isSignedIn} = useAuth()
+  const {signOut} = useAuth()
   const { width, height } = useWindowDimensions() // Lấy dimensions động, cập nhật khi xoay
 
   const onPress = useCallback(async () => {
