@@ -1,64 +1,47 @@
 import Feather from '@expo/vector-icons/Feather'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useAuth } from '@clerk/clerk-expo'
-import { useFocusEffect } from '@react-navigation/native'
-const API_BASE = process.env.EXPO_PUBLIC_API_BASE
-// const { getToken } = useAuth()
-async function fetchPublicItems(token: string) {
 
-  const res = await fetch(`${API_BASE}/api/items`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Fetch failed: ${res.status} - ${text}`)
-  }
-
-  return res.json()
-}
+const SAMPLE_ITEMS = [
+  {
+    id: '1',
+    title: 'Balo da',
+    location: 'CS2, H1-304',
+    date: '26/10/2025',
+    tags: ['Ba lô', 'Da', 'Nâu'],
+    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
+  },
+  {
+    id: '2',
+    title: 'Balo da',
+    location: 'CS2, H1-304',
+    date: '26/10/2025',
+    tags: ['Ba lô', 'Da', 'Nâu'],
+    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
+  },
+  {
+    id: '3',
+    title: 'Balo da',
+    location: 'CS2, H1-304',
+    date: '26/10/2025',
+    tags: ['Ba lô', 'Da', 'Nâu'],
+    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
+  },
+]
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'lost' | 'found'>('lost')
   const [searchText, setSearchText] = useState('')
-  const [items, setItems] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const { getToken } = useAuth()
-  const loadItems = async () => {
-    setLoading(true)
-    try {
-      const token = await getToken()
-      if (!token) return
 
-      const data = await fetchPublicItems(token)
-      setItems(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useFocusEffect(
-  useCallback(() => {
-    loadItems()
-  }, [activeTab])
-)
-  const filteredItems = items.filter(
-    (item) => item.type === activeTab
-  )
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Logo */}
         <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/images/logo.png')}
+          <Image 
+            source={require('../../assets/images/logo.png')} 
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -84,62 +67,44 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* Tabs */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'lost' && styles.activeTab]}
-            onPress={() => setActiveTab('lost')}
-          >
-            <Text style={[styles.tabText, activeTab === 'lost' && styles.activeTabText]}>
-              Đồ bị mất
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'found' && styles.activeTab]}
-            onPress={() => setActiveTab('found')}
-          >
-            <Text style={[styles.tabText, activeTab === 'found' && styles.activeTabText]}>
-              Đồ nhặt được
-            </Text>
-          </TouchableOpacity>
-        </View>
+       {/* Tabs */}
+             <View style={styles.tabContainer}>
+               <TouchableOpacity
+                 style={[styles.tab, activeTab === 'lost' && styles.activeTab]}
+                 onPress={() => setActiveTab('lost')}
+               >
+                 <Text style={[styles.tabText, activeTab === 'lost' && styles.activeTabText]}>
+                   Đồ bị mất
+                 </Text>
+               </TouchableOpacity>
+               <TouchableOpacity
+                 style={[styles.tab, activeTab === 'found' && styles.activeTab]}
+                 onPress={() => setActiveTab('found')}
+               >
+                 <Text style={[styles.tabText, activeTab === 'found' && styles.activeTabText]}>
+                   Đồ nhặt được
+                 </Text>
+               </TouchableOpacity>
+             </View>
 
         {/* Item List */}
         <View style={styles.itemList}>
-          {filteredItems.map((item) => (
+          {SAMPLE_ITEMS.map((item) => (
             <View key={item.id} style={styles.itemCard}>
-              {/* Image */}
-              <Image
-                source={{
-                  uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/100',
-                }}
-                style={styles.itemImage}
-              />
-
-              {/* Info */}
+              <Image source={{ uri: item.image }} style={styles.itemImage} />
               <View style={styles.itemInfo}>
                 <Text style={styles.itemTitle}>{item.title}</Text>
-
                 <View style={styles.itemRow}>
                   <Ionicons name="location-outline" size={16} color="#666" />
-                  <Text style={styles.itemText}>
-                    {item.location} ({item.campus})
-                  </Text>
+                  <Text style={styles.itemText}>{item.location}</Text>
                 </View>
-
                 <View style={styles.itemRow}>
                   <Ionicons name="calendar-outline" size={16} color="#666" />
-                  <Text style={styles.itemText}>
-                    {item.lostAt
-                      ? new Date(item.lostAt).toLocaleDateString('vi-VN')
-                      : '—'}
-                  </Text>
+                  <Text style={styles.itemText}>{item.date}</Text>
                 </View>
               </View>
-
-              {/* Tags */}
               <View style={styles.tagsContainer}>
-                {(item.tags ?? []).map((tag: string, index: number) => (
+                {item.tags.map((tag, index) => (
                   <View key={index} style={styles.tag}>
                     <Text style={styles.tagText}>{tag}</Text>
                   </View>
