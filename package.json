@@ -56,6 +56,18 @@
       "^expo\\/src\\/winter$": "<rootDir>/jest/expo-winter-stub"
     }
   },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "@testing-library/jest-native/extend-expect"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@react-native|react-native|expo|expo-.*|@expo|@react-navigation)/)"
+    ],
+    "moduleNameMapper": {
+      "^expo\\/src\\/winter$": "<rootDir>/jest/expo-winter-stub"
+    }
+  },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
