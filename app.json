@@ -39,11 +39,20 @@
           }
         }
       ],
-      "sentry-expo"
+      [
+        "sentry-expo",
+        {
+          "organization": "lostfound-hcmut",
+          "project": "lost-found-app"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "sentryDsn": "https://3cfbe0213a2c8806c9c172f9e4d11029@o4510499923427328.ingest.us.sentry.io/4510502854197248"
     }
   }
 }
