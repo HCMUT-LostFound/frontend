@@ -1,5 +1,5 @@
 import { useWarmUpBrowser } from '@/hooks/useWarmUpBrowser'
-import { useSSO } from '@clerk/clerk-expo'
+import { useSSO, useAuth } from '@clerk/clerk-expo'
 import * as AuthSession from 'expo-auth-session'
 import { router } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
@@ -12,7 +12,8 @@ export default function LoginScreen() {
     useWarmUpBrowser()
 
     const { startSSOFlow } = useSSO()
-
+    const { getToken, isSignedIn } = useAuth()
+    const { signOut } = useAuth()
     const onPress = useCallback(async () => {
         try {
             // Start the authentication process by calling `startSSOFlow()`
@@ -36,6 +37,18 @@ export default function LoginScreen() {
                             router.push('/')
                             return
                         }
+                        // const token = await getToken()
+
+                        // if (!token) {
+                        //     console.error("No Clerk token")
+                        //     return
+                        // }
+                        
+                        // await fetch('http://10.0.212.196/api/me', {
+                        //     headers: {
+                        //     Authorization: `Bearer ${token}`,
+                        //     },
+                        // })
 
                         router.push('/(tabs)/home')
                     },
@@ -59,6 +72,13 @@ export default function LoginScreen() {
             alignItems: "center",
         }}>
             <Button title="Sign in with Google" onPress={onPress} />
+            <Button
+  title="Logout (DEV)"
+  onPress={async () => {
+    await signOut()
+    console.log('Signed out')
+  }}
+/>
         </View>
     )
 }
