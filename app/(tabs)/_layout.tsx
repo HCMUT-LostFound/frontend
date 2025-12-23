@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         height: 89.5,
         backgroundColor: 'white',
-        paddingBottom: 15,
+        paddingBottom: 30,
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
         shadowColor: '#000',
