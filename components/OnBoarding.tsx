@@ -1,42 +1,8 @@
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Animated, FlatList, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View, ViewToken } from 'react-native';
+import { Animated, Dimensions, FlatList, Image, StyleSheet, Text, TouchableOpacity, View, ViewToken } from 'react-native';
 
-// Base design dimensions (giả định portrait)
-const baseWidth = 430;
-const baseHeight = 932;
-
-// Function normalize để scale kích thước động
-const normalize = (size: number, based: 'width' | 'height' = 'width', currentWidth: number, currentHeight: number) => {
-  const scale = currentWidth / baseWidth;
-  const scaleHeight = currentHeight / baseHeight;
-  let baseScale = based === 'height' ? scaleHeight : scale;
-
-  // Kiểm tra orientation: Nếu landscape (width > height), điều chỉnh scale để tránh méo
-  const isLandscape = currentWidth > currentHeight;
-  if (isLandscape) {
-    baseScale *= 0.85; // Giảm scale nhẹ để fit landscape, nhưng focus portrait
-  }
-
-  // Scale dựa trên kích thước màn hình (cập nhật cho nhiều loại hơn)
-  const isVerySmallScreen = currentWidth <= 360;
-  const isSmallScreen = currentWidth > 360 && currentWidth <= 375;
-  const isMediumScreen = currentWidth > 375 && currentWidth <= 414;
-  const isLargeScreen = currentWidth > 414;
-
-  if (isVerySmallScreen) {
-    baseScale *= 0.75;
-  } else if (isSmallScreen) {
-    baseScale *= 0.82;
-  } else if (isMediumScreen) {
-    baseScale *= 0.91;
-  } else if (isLargeScreen) {
-    baseScale *= 1.05; // Tăng nhẹ cho màn lớn để tránh quá nhỏ
-  }
-
-  const newSize = size * baseScale;
-  return Math.round(newSize);
-};
+const { width, height } = Dimensions.get('window');
 
 const onboardingSlides = [
   {
@@ -48,13 +14,13 @@ const onboardingSlides = [
   {
     id: '2',
     title: 'Kết nối trực tiếp',
-    description: 'Liên hệ trực tiếp chủ sở hữu người nhặt để xác thực và nhận\ntrả lại đồ thất lạc',
+    description: 'Liên hệ trực tiếp chủ sở hữu\nngười nhặt để xác thực và nhận\ntrả lại đồ thất lạc',
     image: require('@/assets/images/logo.png'),
   },
   {
     id: '3',
-    title: 'Thông báo nhanh chóng',
-    description: 'Thông báo tức thời giúp bạn nắm thông tin sớm nhất về đồ thất lạc',
+    title: 'Thông báo\nnhanh chóng',
+    description: 'Thông báo tức thời giúp bạn nắm\nthông tin sớm nhất về đồ thất lạc',
     image: require('@/assets/images/logo.png'),
   },
 ];
@@ -64,7 +30,6 @@ export default function OnBoarding() {
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef<FlatList>(null);
   const router = useRouter();
-  const { width, height } = useWindowDimensions(); // Lấy dimensions động, cập nhật khi xoay
 
   const viewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
@@ -91,49 +56,18 @@ export default function OnBoarding() {
   };
 
   const renderItem = ({ item }: { item: (typeof onboardingSlides)[number] }) => (
-    <View style={[styles.slide, { width, height }]}>
-      {/* Header div */}
-      <View style={[styles.headerDiv, { height: normalize(59, 'height', width, height) }]} />
-      
-      {/* Content div */}
-      <View style={[styles.contentDiv, { 
-        height: normalize(843, 'height', width, height), 
-        width: normalize(390, 'width', width, height),
-      }]}>
-        {/* Sub-div 1 - logoDiv */}
-        <View style={[styles.logoDiv, { height: normalize(300, 'height', width, height) }]}>
-          <View style={[styles.logoContainer, { 
-            width: normalize(170, 'width', width, height), 
-            height: normalize(170, 'height', width, height) 
-          }]}>
-            <Image 
-              source={item.image} 
-              style={styles.logo} 
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-        
-        {/* Sub-div 2 - titleDiv */}
-        <View style={[styles.titleDiv, { height: normalize(108, 'height', width, height) }]}>
-          <Text style={[styles.firstTitle, { 
-            fontSize: normalize(40, 'width', width, height),
-            lineHeight: normalize(48, 'height', width, height),
-          }]}>{item.title}</Text>
-        </View>
-        
-        {/* Sub-div 3 - descriptionDiv */}
-        <View style={[styles.descriptionDiv, { height: normalize(175, 'height', width, height) }]}>
-          <Text style={[styles.firstDescription, { 
-            fontSize: normalize(24, 'width', width, height),
-            lineHeight: normalize(32, 'height', width, height),
-            paddingHorizontal: normalize(20, 'width', width, height),
-          }]}>{item.description}</Text>
-        </View>
+    <View style={styles.slide}>
+      <View style={styles.logoContainer}>
+        <Image 
+          source={item.image} 
+          style={styles.logo} 
+          resizeMode="contain"
+        />
       </View>
-      
-      {/* Footer div */}
-      <View style={[styles.footerDiv, { height: normalize(30, 'height', width, height) }]} />
+      <View style={styles.textContainer}>
+        <Text style={styles.firstTitle}>{item.title}</Text>
+        <Text style={styles.firstDescription}>{item.description}</Text>
+      </View>
     </View>
   );
 
@@ -145,12 +79,6 @@ export default function OnBoarding() {
             key={i} 
             style={[
               styles.dot, 
-              { 
-                width: normalize(8, 'width', width, height),
-                height: normalize(8, 'height', width, height),
-                borderRadius: normalize(4, 'width', width, height),
-                marginHorizontal: normalize(4, 'width', width, height),
-              },
               currentIndex === i ? styles.activeDot : {}
             ]} 
           />
@@ -161,6 +89,12 @@ export default function OnBoarding() {
 
   return (
     <View style={styles.container}>
+      {/* {currentIndex > 0 && (
+        <TouchableOpacity style={styles.skipButton} onPress={skipOnboarding}>
+          <Text style={styles.skipText}>Bỏ qua</Text>
+        </TouchableOpacity>
+      )} */}
+      
       <FlatList
         data={onboardingSlides}
         renderItem={renderItem}
@@ -180,31 +114,16 @@ export default function OnBoarding() {
         ref={slidesRef}
       />
       
-      {/* Fixed dots container */}
-      <View style={[styles.fixedDotsContainer, { bottom: normalize(240, 'height', width, height) }]}>
-        {renderDots()}
-      </View>
+      {renderDots()}
       
-      {/* Fixed buttons container */}
-      <View style={[styles.fixedButtonsContainer, { 
-        bottom: normalize(60, 'height', width, height),
-        gap: normalize(15, 'height', width, height),
-      }]}>
-        <TouchableOpacity style={[styles.primaryButton, { 
-          width: normalize(300, 'width', width, height),
-          height: normalize(47, 'height', width, height),
-          borderRadius: normalize(20, 'width', width, height),
-        }]} onPress={scrollTo}>
-          <Text style={[styles.primaryButtonText, { fontSize: normalize(16, 'width', width, height) }]}>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity style={styles.primaryButton} onPress={scrollTo}>
+          <Text style={styles.primaryButtonText}>
             {currentIndex === onboardingSlides.length - 1 ? 'Tiếp tục' : 'Tiếp tục'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.secondaryButton, { 
-          width: normalize(300, 'width', width, height),
-          height: normalize(47, 'height', width, height),
-          borderRadius: normalize(20, 'width', width, height),
-        }]} onPress={skipOnboarding}>
-          <Text style={[styles.secondaryButtonText, { fontSize: normalize(14, 'width', width, height) }]}>Bỏ qua</Text>
+        <TouchableOpacity style={styles.secondaryButton} onPress={skipOnboarding}>
+          <Text style={styles.secondaryButtonText}>Bỏ qua</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -216,81 +135,153 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#eff4f8',
   },
-  slide: {},
-  headerDiv: {},
-  contentDiv: {
-    alignSelf: 'center',
-  },
-  logoDiv: {
-    justifyContent: 'flex-end',
+  slide: {
+    width,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 180,
   },
   logoContainer: {
-    marginBottom: 0,
+    width: 170,
+    height: 170,
+   
+    marginBottom: 40,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
     width: '100%',
     height: '100%',
   },
-  titleDiv: {
-    justifyContent: 'center',
+  textContainer: {
     alignItems: 'center',
+    marginTop: 20,
   },
   firstTitle: {
-    fontWeight: 'bold',
+    width:410,
+    height:108,
+    fontSize: 40,
+    fontWeight: '700',
     color: '#101828',
+    marginBottom: 16,
     textAlign: 'center',
-  },
-  descriptionDiv: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   firstDescription: {
+    width:390,
+    height:175,
+    fontSize: 24,
     color: '#718096',
     textAlign: 'center',
+    gap : 0,
+    lineHeight: 26.4,
+    paddingHorizontal: 0,
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  iconText: {
+    fontSize: 48,
+    fontWeight: 'bold',
+  },
+  slideTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  slideDescription: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666',
+    lineHeight: 24,
+    paddingHorizontal: 20,
   },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    marginBottom: 30,
   },
   dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#ddd',
+    marginHorizontal: 4,
   },
   activeDot: {
+    
     backgroundColor: '#2B6CB0',
   },
-  primaryButton: {
-    backgroundColor: '#2B6CB0',
+//   skipButton: {
+//     position: 'absolute',
+//     top: 50,
+//     right: 25,
+//     zIndex: 10,
+//     padding: 10,
+//   },
+//   skipText: {
+//     color: '#666',
+//     fontSize: 16,
+//     fontWeight: '500',
+//   },
+  buttonsContainer: {
+    width:390,
+    height:147,
+    gap:20,
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 32,
+    marginBottom: 40,
+  },
+  primaryButton: {
+    width:300,
+    height:47,
+    backgroundColor: '#2B6CB0',
+    paddingVertical: 10,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom:0,
   },
   primaryButtonText: {
     color: '#F7FAFC',
+    fontSize: 14,
     fontWeight: '600',
   },
   secondaryButton: {
+    width:300,
+    height:47,
     backgroundColor: '#CBD5E0',
+    paddingVertical: 16,
+    borderRadius: 20,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   secondaryButtonText: {
     color: '#2D3748',
+    fontSize: 14,
     fontWeight: '500',
   },
-  footerDiv: {},
-  fixedDotsContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    justifyContent: 'center',
+  nextButton: {
+    padding: 16,
+    borderRadius: 30,
+    marginHorizontal: 40,
+    marginBottom: 40,
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  fixedButtonsContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+  nextButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
