@@ -12,12 +12,13 @@
     "test": "jest --coverage --watchAll=false"
   },
   "dependencies": {
-    "@clerk/clerk-expo": "^2.19.6",
+    "@clerk/clerk-expo": "^2.19.14",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
-    "expo": "~54.0.23",
+    "expo": "~54.0.30",
+    "expo-auth-session": "^4.0.1",
     "expo-constants": "~18.0.10",
     "expo-font": "~14.0.9",
     "expo-haptics": "~15.0.7",
@@ -33,8 +34,8 @@
     "expo-system-ui": "~6.0.8",
     "expo-web-browser": "~15.0.9",
     "jwt-decode": "^4.0.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-reanimated": "~4.1.1",
@@ -42,19 +43,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
-    "sentry-expo": "~7.0.0"
-  },
-  "jest": {
-    "preset": "jest-expo",
-    "setupFilesAfterEnv": [
-      "@testing-library/jest-native/extend-expect"
-    ],
-    "transformIgnorePatterns": [
-      "node_modules/(?!(@react-native|react-native|expo|expo-.*|@expo|@react-navigation)/)"
-    ],
-    "moduleNameMapper": {
-      "^expo\\/src\\/winter$": "<rootDir>/jest/expo-winter-stub"
-    }
+    "sentry-expo": "^5.0.3"
   },
   "jest": {
     "preset": "jest-expo",
