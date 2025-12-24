@@ -5,12 +5,10 @@ import ReportMissingItem from '../components/ReportMissingItem';
 export default function ReportMissingScreen() {
   return (
     <>
-      <Stack.Screen 
-        options={{ 
-          title: 'Report Missing Item',
-          headerShown: true,
-          headerBackTitle: 'Back',
-        }} 
+      <Stack.Screen
+        options={{
+          headerShown: false,
+        }}
       />
       <View style={{ flex: 1, backgroundColor: '#F7FAFC' }}>
         <ReportMissingItem />
