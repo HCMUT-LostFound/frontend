@@ -1,36 +1,38 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const ReportMissingItem = () => {
-  const navigation = useNavigation();
   const router = useRouter();
   const [itemName, setItemName] = useState('');
-  const [category, setCategory] = useState('');
-  const [dateLost, setDateLost] = useState('');
-  const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [location, setLocation] = useState('');
+  const [building, setBuilding] = useState('CS1');
+  const [dateLost, setDateLost] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const availableTags = ['Ba lô', 'Da', 'Nâu', 'Đen', 'Xanh', 'Đỏ', 'Laptop', 'Điện thoại'];
 
   const handleChoosePhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Please allow access to your photo library to upload images.');
+      Alert.alert('Cần cấp quyền', 'Vui lòng cho phép truy cập thư viện ảnh.');
       return;
     }
 
@@ -42,31 +44,36 @@ const ReportMissingItem = () => {
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImages([...images, result.assets[0].uri]);
+      if (images.length < 5) {
+        setImages([...images, result.assets[0].uri]);
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
+  };
+
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
     }
   };
 
   const handleSubmit = () => {
-    if (!itemName || !category || !dateLost || !location) {
-      Alert.alert('Missing Information', 'Please fill in all required fields.');
+    if (!itemName || !description || !location || !dateLost) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
-    
+
     setIsLoading(true);
-    // Handle form submission here
-    console.log({
-      itemName,
-      category,
-      dateLost,
-      location,
-      description,
-      images,
-    });
-    
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert('Success', 'Your missing item has been reported successfully!', [
+      Alert.alert('Thành công', 'Báo cáo của bạn đã được gửi!', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     }, 1500);
@@ -74,186 +81,174 @@ const ReportMissingItem = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#2B6CB0" />
+          <Ionicons name="arrow-back" size={24} color="#000000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Đồ vật bị mất</Text>
+        <Text style={styles.headerTitle}>Báo cáo đồ thất lạc</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.formContainer}>
-          {/* Tên đồ vật */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Tên đồ vật <Text style={{color: 'red'}}>*</Text></Text>
-            <View style={styles.inputWrapper}>
+          {/* Description */}
+          <Text style={styles.subtitle}>
+            Vui lòng cung cấp thông tin chi tiết để giúp tìm lại đồ của bạn.
+          </Text>
+
+          {/* Tên món đồ */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tên món đồ</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ví dụ: Bình nước, ..."
+              placeholderTextColor="#718096"
+              value={itemName}
+              onChangeText={setItemName}
+            />
+          </View>
+
+          {/* Mô tả chi tiết */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Mô tả chi tiết</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Mô tả chi tiết màu sắc, hình dáng, tình trạng, ..."
+              placeholderTextColor="#718096"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+            />
+          </View>
+
+          {/* Hình ảnh (nếu có) */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Hình ảnh (nếu có)</Text>
+
+            <TouchableOpacity style={styles.uploadBox} onPress={handleChoosePhoto}>
+              <Ionicons name="cloud-upload-outline" size={40} color="#718096" />
+              <Text style={styles.uploadText}>Nhấn để tải ảnh lên</Text>
+              <Text style={styles.uploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
+            </TouchableOpacity>
+
+            {/* Show uploaded images */}
+            {images.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageList}>
+                {images.map((uri, index) => (
+                  <View key={index} style={styles.imageWrapper}>
+                    <Image source={{ uri }} style={styles.uploadedImage} />
+                    <TouchableOpacity
+                      style={styles.removeImageBtn}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close-circle" size={24} color="#EDF2F7" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
+          {/* Vị trí nhìn thấy lần cuối */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Vị trí nhìn thấy lần cuối</Text>
+            <View style={styles.locationRow}>
+              <TextInput
+                style={[styles.input, styles.locationInput]}
+                placeholder="Ví dụ: H1-101, Thư viện, ..."
+                placeholderTextColor="#718096"
+                value={location}
+                onChangeText={setLocation}
+              />
+              <View style={styles.buildingDropdown}>
+                <Text style={styles.buildingText}>{building}</Text>
+                <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+              </View>
+            </View>
+          </View>
+
+          {/* Thời điểm bị mất */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Thời điểm bị mất</Text>
+            <View style={styles.dateInputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder="Nhập tên đồ vật"
-                value={itemName}
-                onChangeText={setItemName}
-                placeholderTextColor="#A0AEC0"
-              />
-              <Ionicons name="pencil" size={20} color="#A0AEC0" style={styles.inputIcon} />
-            </View>
-          </View>
-
-          {/* Loại đồ vật */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Loại đồ vật <Text style={{color: 'red'}}>*</Text></Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, { paddingRight: 40 }]}
-                placeholder="Chọn loại đồ vật"
-                value={category}
-                onChangeText={setCategory}
-                placeholderTextColor="#A0AEC0"
-              />
-              <MaterialIcons
-                name="keyboard-arrow-down"
-                size={24}
-                color="#718096"
-                style={styles.dropdownIcon}
-              />
-            </View>
-          </View>
-
-          {/* Ngày mất */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Ngày mất <Text style={{color: 'red'}}>*</Text></Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, { paddingRight: 40 }]}
-                placeholder="Chọn ngày mất"
+                placeholder="dd/mm/yyyy"
+                placeholderTextColor="#718096"
                 value={dateLost}
                 onChangeText={setDateLost}
-                placeholderTextColor="#A0AEC0"
               />
               <MaterialIcons
                 name="calendar-today"
                 size={20}
                 color="#718096"
-                style={styles.dateIcon}
+                style={styles.calendarIcon}
               />
             </View>
           </View>
 
-          {/* Địa điểm mất */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Địa điểm mất <Text style={{color: 'red'}}>*</Text></Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, { paddingRight: 40 }]}
-                placeholder="Nhập địa điểm mất"
-                value={location}
-                onChangeText={setLocation}
-                placeholderTextColor="#A0AEC0"
-              />
-              <MaterialIcons
-                name="location-on"
-                size={20}
-                color="#718096"
-                style={styles.locationIcon}
-              />
-            </View>
-          </View>
+          {/* Tags */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tags</Text>
+            <Text style={styles.tagSubtitle}>
+              Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ đẵng hơn
+            </Text>
 
-          {/* Mô tả */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mô tả</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Mô tả chi tiết (màu sắc, nhãn hiệu, đặc điểm nhận dạng...)"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={4}
-                placeholderTextColor="#A0AEC0"
-              />
-              <Ionicons name="pencil" size={20} color="#A0AEC0" style={[styles.inputIcon, {top: 20}]} />
-            </View>
-          </View>
-
-          {/* Tải lên hình ảnh */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Tải lên hình ảnh</Text>
-            <Text style={styles.subLabel}>Tải lên tối đa 5 ảnh (mỗi ảnh tối đa 5MB)</Text>
-            
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              style={styles.photoContainer}
-              contentContainerStyle={styles.photoContainerContent}
+            <TouchableOpacity
+              style={styles.tagDropdown}
+              onPress={() => setShowTagDropdown(!showTagDropdown)}
             >
-              {images.map((uri, index) => (
-                <View key={index} style={styles.photoWrapper}>
-                  <Image source={{ uri }} style={styles.photo} />
+              <Text style={styles.tagDropdownText}>
+                {selectedTags.length > 0 ? `Đã chọn ${selectedTags.length} tags` : 'Chọn các tags phù hợp'}
+              </Text>
+              <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+            </TouchableOpacity>
+
+            {/* Selected Tags */}
+            {selectedTags.length > 0 && (
+              <View style={styles.selectedTagsContainer}>
+                {selectedTags.map((tag, index) => (
+                  <View key={index} style={styles.tagChip}>
+                    <Text style={styles.tagChipText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Tag Dropdown List */}
+            {showTagDropdown && (
+              <View style={styles.tagDropdownList}>
+                {availableTags.map((tag, index) => (
                   <TouchableOpacity
-                    style={styles.removePhotoButton}
-                    onPress={() => {
-                      const newImages = [...images];
-                      newImages.splice(index, 1);
-                      setImages(newImages);
-                    }}
+                    key={index}
+                    style={styles.tagOption}
+                    onPress={() => toggleTag(tag)}
                   >
-                    <Ionicons name="close-circle" size={20} color="#E53E3E" />
+                    <Text style={styles.tagOptionText}>{tag}</Text>
+                    {selectedTags.includes(tag) && (
+                      <Ionicons name="checkmark" size={20} color="#2B6CB0" />
+                    )}
                   </TouchableOpacity>
-                </View>
-              ))}
-              
-              {images.length < 5 && (
-                <TouchableOpacity style={styles.addPhotoButton} onPress={handleChoosePhoto}>
-                  <Ionicons name="camera" size={24} color="#A0AEC0" />
-                  <Text style={styles.addPhotoText}>Thêm ảnh</Text>
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-          </View>
-          
-          {/* Phần thông tin liên hệ */}
-          <View style={styles.contactInfo}>
-            <Text style={styles.contactTitle}>Thông tin liên hệ</Text>
-            <Text style={styles.contactSubtitle}>Thông tin này sẽ được hiển thị công khai</Text>
-            
-            <View style={styles.contactItem}>
-              <Ionicons name="call" size={20} color="#4A5568" />
-              <Text style={styles.contactText}>+84 123 456 789</Text>
-            </View>
-            
-            <View style={styles.contactItem}>
-              <Ionicons name="mail" size={20} color="#4A5568" />
-              <Text style={styles.contactText}>nguyenvana@gmail.com</Text>
-            </View>
-            
-            <View style={styles.contactItem}>
-              <Ionicons name="location" size={20} color="#4A5568" />
-              <Text style={styles.contactText}>227 Nguyễn Văn Cừ, Quận 5, TP.HCM</Text>
-            </View>
+                ))}
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
 
-      {/* Nút gửi báo cáo */}
+      {/* Submit Button */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.submitButton, (isLoading || !itemName || !category || !dateLost || !location) && styles.submitButtonDisabled]}
+          style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          disabled={isLoading || !itemName || !category || !dateLost || !location}
+          disabled={isLoading}
         >
-          <LinearGradient
-            colors={['#3182CE', '#2B6CB0']}
-            style={styles.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            {isLoading ? (
-              <Text style={styles.submitButtonText}>Đang gửi...</Text>
-            ) : (
-              <Text style={styles.submitButtonText}>ĐĂNG TIN</Text>
-            )}
-          </LinearGradient>
+          <Text style={styles.submitButtonText}>
+            {isLoading ? 'Đang gửi...' : 'Gửi báo cáo'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -264,18 +259,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7FAFC',
-    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 0 : 16,
     paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF2F7',
   },
   backButton: {
     padding: 8,
@@ -283,175 +277,187 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2D3748',
-    marginLeft: -24,
+    color: '#000000',
   },
   scrollView: {
     flex: 1,
   },
   formContainer: {
     padding: 16,
-    paddingBottom: 100,
   },
-  inputContainer: {
-    marginBottom: 16,
+  subtitle: {
+    fontSize: 14,
+    color: '#718096',
+    marginBottom: 24,
+    lineHeight: 20,
   },
-  inputWrapper: {
-    position: 'relative',
-  },
-  inputIcon: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
+  inputGroup: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#2D3748',
+    color: '#000000',
     marginBottom: 8,
   },
-  subLabel: {
+  tagSubtitle: {
     fontSize: 12,
     color: '#718096',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   input: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 12,
-    paddingRight: 40,
-    fontSize: 16,
-    color: '#2D3748',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    minHeight: 48,
-  },
-  pickerContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-  },
-  dropdownIcon: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -12 }],
-  },
-  dateIcon: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
-  },
-  locationIcon: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: [{ translateY: -10 }],
+    borderColor: '#EDF2F7',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: '#000000',
   },
   textArea: {
-    minHeight: 120,
-    textAlignVertical: 'top',
+    minHeight: 100,
     paddingTop: 12,
   },
-  photoContainer: {
-    flexDirection: 'row',
-    marginTop: 8,
+  uploadBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EDF2F7',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  photoContainerContent: {
-    paddingRight: 16,
+  uploadText: {
+    fontSize: 14,
+    color: '#718096',
+    marginTop: 12,
   },
-  photoWrapper: {
+  uploadSubtext: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 4,
+  },
+  imageList: {
+    marginTop: 12,
+  },
+  imageWrapper: {
     position: 'relative',
     marginRight: 12,
   },
-  photo: {
+  uploadedImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
-  removePhotoButton: {
+  removeImageBtn: {
     position: 'absolute',
     top: -8,
     right: -8,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 2,
   },
-  addPhotoButton: {
-    width: 80,
-    height: 80,
+  locationRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  locationInput: {
+    flex: 1,
+  },
+  buildingDropdown: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderStyle: 'dashed',
+    borderColor: '#EDF2F7',
     borderRadius: 8,
-    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 8,
+    gap: 8,
+    minWidth: 80,
   },
-  addPhotoText: {
+  buildingText: {
+    fontSize: 14,
+    color: '#000000',
+  },
+  dateInputWrapper: {
+    position: 'relative',
+  },
+  calendarIcon: {
+    position: 'absolute',
+    right: 16,
+    top: 14,
+  },
+  tagDropdown: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  tagDropdownText: {
+    fontSize: 14,
+    color: '#718096',
+  },
+  selectedTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  tagChip: {
+    backgroundColor: '#EDF2F7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  tagChipText: {
     fontSize: 12,
-    color: '#A0AEC0',
-    marginTop: 4,
+    color: '#2D3748',
+  },
+  tagDropdownList: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EDF2F7',
+    borderRadius: 8,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  tagOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F7FAFC',
+  },
+  tagOptionText: {
+    fontSize: 14,
+    color: '#000000',
   },
   footer: {
     padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    marginTop: 'auto',
-  },
-  gradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderTopColor: '#EDF2F7',
   },
   submitButton: {
+    backgroundColor: '#2B6CB0',
     borderRadius: 8,
-    height: 56,
-    overflow: 'hidden',
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   submitButtonDisabled: {
     backgroundColor: '#CBD5E0',
   },
   submitButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  contactInfo: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  contactTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2D3748',
-    marginBottom: 4,
-  },
-  contactSubtitle: {
-    fontSize: 12,
-    color: '#718096',
-    marginBottom: 12,
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  contactText: {
-    marginLeft: 8,
-    color: '#4A5568',
-    fontSize: 14,
+    color: '#FFFFFF',
   },
 });
 
