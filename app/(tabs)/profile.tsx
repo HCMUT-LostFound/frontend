@@ -1,4 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { useFocusEffect } from 'expo-router'
+import { useCallback } from 'react'
 import React, { useState, useEffect } from 'react'
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -80,10 +82,12 @@ export default function Profile() {
     }
   }
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return
-    fetchMyItems()
-  }, [isLoaded, isSignedIn])
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoaded || !isSignedIn) return
+      fetchMyItems()
+    }, [isLoaded, isSignedIn])
+  )
   // const handleConfirm = () => {
   //   if (selectedItemId) {
   //     if (modalType === 'found') {
@@ -234,10 +238,12 @@ export default function Profile() {
 
               <TouchableOpacity
                 style={styles.actionButton}
-                onPress={() => {setSelectedItemId(item.id)
-                    setModalType(activeTab === 'lost' ? 'found' : 'return')
-                    setShowModal(true)}
-                  
+                onPress={() => {
+                  setSelectedItemId(item.id)
+                  setModalType(activeTab === 'lost' ? 'found' : 'return')
+                  setShowModal(true)
+                }
+
                 }
               >
                 <Text style={styles.actionButtonText}>
@@ -274,7 +280,7 @@ export default function Profile() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmButton}
-              onPress={handleConfirm}
+                onPress={handleConfirm}
               >
                 <Text style={styles.confirmButtonText}>Xác nhận</Text>
               </TouchableOpacity>

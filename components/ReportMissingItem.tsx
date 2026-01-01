@@ -2,6 +2,8 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { uploadImageToSupabase } from '../services/uploadImage';
+import { useAuth } from '@clerk/clerk-expo';
 import {
   Alert,
   Image,
@@ -14,6 +16,22 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE
+
+function parseDDMMYYYY(input: string): Date | null {
+  const [dd, mm, yyyy] = input.split('/');
+  if (!dd || !mm || !yyyy) return null;
+
+  const day = Number(dd);
+  const month = Number(mm) - 1;
+  const year = Number(yyyy);
+
+  const date = new Date(year, month, day);
+  if (isNaN(date.getTime())) return null;
+
+  return date;
+}
 
 const ReportMissingItem = () => {
   const router = useRouter();
@@ -63,21 +81,65 @@ const ReportMissingItem = () => {
       setSelectedTags([...selectedTags, tag]);
     }
   };
-
-  const handleSubmit = () => {
+  const { getToken } = useAuth()
+  const handleSubmit = async () => {
     if (!itemName || !description || !location || !dateLost) {
       Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      setIsLoading(true);
+      const uploadedUrls =
+        images.length > 0
+          ? await Promise.all(images.map(uri => uploadImageToSupabase(uri)))
+          : [];
+
+      const parsedDate = parseDDMMYYYY(dateLost);
+      if (!parsedDate) {
+        Alert.alert('Lỗi ngày', 'Vui lòng nhập ngày theo định dạng dd/mm/yyyy');
+        setIsLoading(false);
+        return;
+      }
+
+      const lostAtISO = parsedDate.toISOString();
+
+      const payload = {
+        type: 'lost', // 👈 fix cứng là lost
+        title: itemName,
+        imageUrls: uploadedUrls,
+        location: location,
+        campus: building,
+        lostAt: lostAtISO,
+        tags: selectedTags,
+        description: description,
+      };
+      const token = await getToken()
+      if (!token) return
+      const res = await fetch(`${API_BASE}/api/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || 'Request failed');
+      }
+
       Alert.alert('Thành công', 'Báo cáo của bạn đã được gửi!', [
         { text: 'OK', onPress: () => router.back() },
       ]);
-    }, 1500);
+    } catch (err: any) {
+      Alert.alert('Lỗi', err.message || 'Không gửi được báo cáo');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
