@@ -44,7 +44,7 @@ export default function Home() {
 
   const { getToken } = useAuth()
 
-  const loadItems = async () => {
+   const loadItems = async () => {
     setLoading(true)
     try {
       const token = await getToken()
@@ -64,26 +64,14 @@ export default function Home() {
     }, [])
   )
 
-  // ===== TAG CATEGORIES =====
+  // ===== TAG CATEGORIES ===== (giữ nguyên như cũ)
   const tagCategories = [
     {
       title: 'Loại đồ vật',
       data: [
-        'Ba lô',
-        'Túi xách',
-        'Ví tiền',
-        'Điện thoại',
-        'Laptop',
-        'Tai nghe',
-        'Sạc pin',
-        'Bình nước',
-        'Ô (dù)',
-        'Chìa khóa',
-        'Thẻ sinh viên',
-        'Sách vở',
-        'Áo khoác',
-        'Mũ nón',
-        'Kính mắt',
+        'Ba lô', 'Túi xách', 'Ví tiền', 'Điện thoại', 'Laptop', 'Tai nghe',
+        'Sạc pin', 'Bình nước', 'Ô (dù)', 'Chìa khóa', 'Thẻ sinh viên',
+        'Sách vở', 'Áo khoác', 'Mũ nón', 'Kính mắt',
       ],
     },
     {
@@ -97,30 +85,15 @@ export default function Home() {
     {
       title: 'Địa điểm',
       data: [
-        'Thư viện',
-        'Thư viện Tạ Quang Bửu',
-        'Căng tin',
-        'Nhà ăn sinh viên',
-        'Ký túc xá',
-        'KTX Khu A',
-        'KTX Khu B',
-        'Giảng đường',
-        'Tòa nhà H1',
-        'Tòa nhà H2',
-        'Tòa nhà H3',
-        'Tòa nhà H6',
-        'Sân bóng đá',
-        'Nhà học thể dục',
-        'Cổng phụ',
-        'Khu tự học',
-        'Cổng chính',
-        'Phòng thí nghiệm',
-        'Hành lang',
+        'Thư viện', 'Thư viện Tạ Quang Bửu', 'Căng tin', 'Nhà ăn sinh viên',
+        'Ký túc xá', 'KTX Khu A', 'KTX Khu B', 'Giảng đường', 'Tòa nhà H1',
+        'Tòa nhà H2', 'Tòa nhà H3', 'Tòa nhà H6', 'Sân bóng đá',
+        'Nhà học thể dục', 'Cổng phụ', 'Khu tự học', 'Cổng chính',
+        'Phòng thí nghiệm', 'Hành lang',
       ],
     },
   ]
 
-  // ===== FILTER LOGIC =====
   const filteredItems = items
     .filter(item => item.type === activeTab)
     .filter(item => {
@@ -145,17 +118,13 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Logo */}
+        {/* Logo, Title, Search, Tabs giữ nguyên */}
         <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={styles.logoImage}
-          />
+          <Image source={require('../../assets/images/logo.png')} style={styles.logoImage} />
         </View>
 
         <Text style={styles.title}>Bạn đang tìm đồ thất lạc?</Text>
 
-        {/* Search */}
         <View style={styles.searchContainer}>
           <View style={styles.searchInputWrapper}>
             <Ionicons name="search" size={20} color="#999" />
@@ -180,7 +149,6 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* Tabs */}
         <View style={styles.tabContainer}>
           {['lost', 'found'].map(tab => (
             <TouchableOpacity
@@ -188,52 +156,55 @@ export default function Home() {
               style={[styles.tab, activeTab === tab && styles.activeTab]}
               onPress={() => setActiveTab(tab as any)}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab && styles.activeTabText,
-                ]}
-              >
+              <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
                 {tab === 'lost' ? 'Đồ bị mất' : 'Đồ nhặt được'}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Items */}
+        {/* Items List */}
         <View style={styles.itemList}>
           {filteredItems.length === 0 ? (
             <Text style={styles.emptyText}>Không tìm thấy món đồ nào.</Text>
           ) : (
             filteredItems.map(item => (
               <View key={item.id} style={styles.itemCard}>
-                <Image
-                  source={{
-                    uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/100',
-                  }}
-                  style={styles.itemImage}
-                />
-
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-
-                  <View style={styles.itemRow}>
-                    <Ionicons name="location-outline" size={16} color="#666" />
-                    <Text style={styles.itemText}>
-                      {item.location} ({item.campus})
-                    </Text>
+                {/* Phần trên: Hình + Thông tin */}
+                <View style={styles.cardTop}>
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{
+                        uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/127',
+                      }}
+                      style={styles.itemImage}
+                    />
                   </View>
 
-                  <View style={styles.itemRow}>
-                    <Ionicons name="calendar-outline" size={16} color="#666" />
-                    <Text style={styles.itemText}>
-                      {item.lostAt
-                        ? new Date(item.lostAt).toLocaleDateString('vi-VN')
-                        : '—'}
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemTitle} numberOfLines={2} ellipsizeMode="tail">
+                      {item.title}
                     </Text>
+
+                    <View style={styles.itemRow}>
+                      <Ionicons name="location-outline" size={16} color="#666" />
+                      <Text style={styles.itemText}>
+                        {item.location} ({item.campus})
+                      </Text>
+                    </View>
+
+                    <View style={styles.itemRow}>
+                      <Ionicons name="calendar-outline" size={16} color="#666" />
+                      <Text style={styles.itemText}>
+                        {item.lostAt
+                          ? new Date(item.lostAt).toLocaleDateString('vi-VN')
+                          : '—'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
+                {/* Phần dưới: Tags - tự động wrap và tăng chiều cao */}
                 <View style={styles.tagsContainer}>
                   {(item.tags ?? []).map((tag: string) => (
                     <View key={tag} style={styles.tag}>
@@ -247,7 +218,7 @@ export default function Home() {
         </View>
       </ScrollView>
 
-      {/* FILTER MODAL */}
+      {/* FILTER MODAL giữ nguyên */}
       <Modal visible={isFilterModalVisible} transparent animationType="slide">
         <TouchableWithoutFeedback onPress={() => setIsFilterModalVisible(false)}>
           <View style={styles.modalOverlay}>
@@ -258,25 +229,21 @@ export default function Home() {
                   <Ionicons
                     name="close"
                     size={24}
+                    color="#666"
                     onPress={() => setIsFilterModalVisible(false)}
                   />
                 </View>
 
                 {selectedTags.length > 0 && (
-                  <TouchableOpacity
-                    style={styles.clearButton}
-                    onPress={clearFilter}
-                  >
+                  <TouchableOpacity style={styles.clearButton} onPress={clearFilter}>
                     <Text style={styles.clearButtonText}>Xóa bộ lọc</Text>
                   </TouchableOpacity>
                 )}
 
-                <ScrollView>
+                <ScrollView showsVerticalScrollIndicator={false}>
                   {tagCategories.map(category => (
                     <View key={category.title} style={styles.categorySection}>
-                      <Text style={styles.categoryTitle}>
-                        {category.title}
-                      </Text>
+                      <Text style={styles.categoryTitle}>{category.title}</Text>
                       <View style={styles.categoryTags}>
                         {category.data.map(tag => {
                           const selected = selectedTags.includes(tag)
@@ -292,8 +259,7 @@ export default function Home() {
                               <Text
                                 style={[
                                   styles.filterTagText,
-                                  selected &&
-                                    styles.filterTagTextSelected,
+                                  selected && styles.filterTagTextSelected,
                                 ]}
                               >
                                 {tag}
@@ -323,13 +289,11 @@ export default function Home() {
   )
 }
 
-/* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#eff4f8', paddingHorizontal: 20 },
   logoContainer: { alignItems: 'center', marginVertical: 20 },
-  logoImage: { width: 150, height: 150 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20 },
+  logoImage: { width: 150, height: 150, resizeMode: 'contain' },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#1E1E1E', marginBottom: 20 },
   searchContainer: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   searchInputWrapper: {
     flex: 1,
@@ -338,8 +302,11 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingHorizontal: 15,
     alignItems: 'center',
+    height: 45,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
-  searchInput: { flex: 1, marginLeft: 10 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 15 },
   filterButton: {
     width: 45,
     height: 45,
@@ -347,6 +314,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    position: 'relative',
   },
   filterBadge: {
     position: 'absolute',
@@ -354,39 +324,102 @@ const styles = StyleSheet.create({
     right: -6,
     backgroundColor: '#FF3B30',
     borderRadius: 10,
-    paddingHorizontal: 6,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
-  filterBadgeText: { color: '#fff', fontSize: 12 },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
+  filterBadgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  tabContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   tab: { width: '48%', paddingVertical: 12, alignItems: 'center' },
   activeTab: { borderBottomWidth: 2, borderBottomColor: '#2B6CB0' },
-  tabText: { color: '#666' },
+  tabText: { fontSize: 14, color: '#666', fontWeight: '500' },
   activeTabText: { color: '#2B6CB0', fontWeight: '600' },
-  itemList: { gap: 15 },
-  emptyText: { textAlign: 'center', marginTop: 40 },
+  itemList: { gap: 15, paddingBottom: 20 },
+  emptyText: { textAlign: 'center', color: '#999', fontSize: 16, marginTop: 40 },
+
+  // ===== CARD MỚI - ĐÃ CẬP NHẬT =====
   itemCard: {
-    backgroundColor: '#fff',
+    width: 390,
+    minHeight: 201, // tối thiểu như thiết kế ban đầu
+    backgroundColor: '#eff4f8',
     borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
+    overflow: 'hidden',
+    borderBottomWidth: 2,   // đường kẻ ngang đậm hơn ở dưới cùng
+  borderBottomColor: '#DDDDDD',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    marginBottom: 8,
   },
-  itemImage: { width: 100, height: 100, borderRadius: 10 },
-  itemInfo: { marginLeft: 10 },
-  itemTitle: { fontWeight: 'bold', fontSize: 16 },
-  itemRow: { flexDirection: 'row', alignItems: 'center' },
-  itemText: { marginLeft: 5 },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  cardTop: {
+    width: 390,
+    height: 152,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  imageContainer: {
+    width: 127,
+    height: 127,
+    marginLeft: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  itemImage: {
+    width: 127,
+    height: 127,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+  },
+  itemInfo: {
+    flex: 1,
+    height: 127,
+    marginLeft:25,
+    paddingHorizontal: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  itemTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#171923',
+    lineHeight: 24,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  itemText: {
+    fontSize: 16,
+    color: '#171923',
+    marginLeft: 6,
+  },
+  tagsContainer: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignContent: 'flex-start',
+  },
   tag: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 10,
-    borderRadius: 15,
+    backgroundColor: '#F2F2F2',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
   },
-  tagText: { fontSize: 12 },
+  tagText: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '500',
+  },
+
+  // Modal styles giữ nguyên...
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -397,33 +430,35 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
   },
-  modalTitle: { fontSize: 18, fontWeight: 'bold' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E1E1E' },
   clearButton: { alignSelf: 'flex-end', marginBottom: 10 },
-  clearButtonText: { color: '#2B6CB0' },
+  clearButtonText: { color: '#2B6CB0', fontSize: 14 },
   categorySection: { marginBottom: 20 },
-  categoryTitle: { fontWeight: '600', marginBottom: 10 },
+  categoryTitle: { fontSize: 16, fontWeight: '600', color: '#1E1E1E', marginBottom: 10 },
   categoryTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   filterTag: {
     backgroundColor: '#F0F0F0',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 20,
   },
   filterTagSelected: { backgroundColor: '#2B6CB0' },
-  filterTagText: { color: '#666' },
+  filterTagText: { color: '#666', fontSize: 14 },
   filterTagTextSelected: { color: '#fff', fontWeight: '600' },
   applyButton: {
     backgroundColor: '#2B6CB0',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: 10,
   },
-  applyButtonText: { color: '#fff', fontWeight: '600' },
+  applyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 })
