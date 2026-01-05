@@ -7,6 +7,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import {
   Alert,
   Image,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -15,7 +16,9 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 
@@ -44,8 +47,63 @@ const ReportMissingItem = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [date, setDate] = useState(new Date());
 
-  const availableTags = ['Ba lô', 'Da', 'Nâu', 'Đen', 'Xanh', 'Đỏ', 'Laptop', 'Điện thoại'];
+ const availableTags = [
+  // Loại đồ vật phổ biến
+  'Ba lô',
+  'Túi xách',
+  'Ví tiền',
+  'Điện thoại',
+  'Laptop',
+  'Tai nghe',
+  'Sạc pin',
+  'Bình nước',
+  'Ô (dù)',
+  'Chìa khóa',
+  'Thẻ sinh viên',
+  'Sách vở',
+  'Áo khoác',
+  'Mũ nón',
+  'Kính mắt',
+
+  // Màu sắc
+  'Đen',
+  'Trắng',
+  'Xanh',
+  'Đỏ',
+  'Xám',
+  'Nâu',
+  'Hồng',
+
+  // Chất liệu / Đặc điểm
+  'Da',
+  'Vải',
+  'Nhựa',
+  'Kim loại',
+
+  // Vị trí (mới thêm)
+  'Thư viện',
+  'Thư viện Tạ Quang Bửu',
+  'Căng tin',
+  'Nhà ăn sinh viên',
+  'Ký túc xá',
+  'KTX Khu A',
+  'KTX Khu B',
+  'Giảng đường',
+  'Tòa nhà H1',
+  'Tòa nhà H2',
+  'Tòa nhà H3',
+  'Tòa nhà H6',
+  'Sân bóng đá',
+  'Sân thể thao',
+  'Bể bơi',
+  'Khu tự học',
+  'Cổng chính',
+  'Phòng thí nghiệm',
+  'Hành lang',
+].sort()
 
   const handleChoosePhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -74,6 +132,13 @@ const ReportMissingItem = () => {
     setImages(newImages);
   };
 
+  const formatDate = (date: Date) => {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
       setSelectedTags(selectedTags.filter(t => t !== tag));
@@ -81,7 +146,9 @@ const ReportMissingItem = () => {
       setSelectedTags([...selectedTags, tag]);
     }
   };
-  const { getToken } = useAuth()
+
+  const { getToken } = useAuth();
+
   const handleSubmit = async () => {
     if (!itemName || !description || !location || !dateLost) {
       Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin bắt buộc.');
@@ -105,7 +172,7 @@ const ReportMissingItem = () => {
       const lostAtISO = parsedDate.toISOString();
 
       const payload = {
-        type: 'lost', // 👈 fix cứng là lost
+        type: 'lost',
         title: itemName,
         imageUrls: uploadedUrls,
         location: location,
@@ -114,8 +181,10 @@ const ReportMissingItem = () => {
         tags: selectedTags,
         description: description,
       };
-      const token = await getToken()
-      if (!token) return
+
+      const token = await getToken();
+      if (!token) return;
+
       const res = await fetch(`${API_BASE}/api/items`, {
         method: 'POST',
         headers: {
@@ -140,24 +209,56 @@ const ReportMissingItem = () => {
     }
   };
 
+  // Xử lý chọn ngày
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    setDate(currentDate);
+
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      setDateLost(formatDate(currentDate));
+    }
+  };
+
+  const confirmDate = () => {
+    setDateLost(formatDate(date));
+    setShowDatePicker(false);
+  };
+
+  const cancelDate = () => {
+    setShowDatePicker(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Báo cáo đồ thất lạc</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 20}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#000000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Báo cáo đồ thất lạc</Text>
+          <View style={{ width: 24 }} />
+        </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.formContainer}>
-          {/* Description */}
-          <Text style={styles.subtitle}>
-            Vui lòng cung cấp thông tin chi tiết để giúp tìm lại đồ của bạn.
-          </Text>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustContentInsets={false}
+          contentInset={{ bottom: 0 }}
+          contentInsetAdjustmentBehavior="automatic"
+        >
+          <View style={styles.formContainer}>
+            {/* Description */}
+            <Text style={styles.subtitle}>
+              Vui lòng cung cấp thông tin chi tiết để giúp tìm lại đồ của bạn.
+            </Text>
 
           {/* Tên món đồ */}
           <View style={styles.inputGroup}>
@@ -190,14 +291,13 @@ const ReportMissingItem = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Hình ảnh (nếu có)</Text>
 
-            <TouchableOpacity style={styles.uploadBox} onPress={handleChoosePhoto}>
-              <Ionicons name="cloud-upload-outline" size={40} color="#718096" />
-              <Text style={styles.uploadText}>Nhấn để tải ảnh lên</Text>
-              <Text style={styles.uploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
-            </TouchableOpacity>
-
-            {/* Show uploaded images */}
-            {images.length > 0 && (
+            {images.length === 0 ? (
+              <TouchableOpacity style={styles.uploadBox} onPress={handleChoosePhoto}>
+                <Ionicons name="cloud-upload-outline" size={40} color="#718096" />
+                <Text style={styles.uploadText}>Nhấn để tải ảnh lên</Text>
+                <Text style={styles.uploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
+              </TouchableOpacity>
+            ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageList}>
                 {images.map((uri, index) => (
                   <View key={index} style={styles.imageWrapper}>
@@ -210,6 +310,11 @@ const ReportMissingItem = () => {
                     </TouchableOpacity>
                   </View>
                 ))}
+                {images.length < 5 && (
+                  <TouchableOpacity style={styles.addMoreButton} onPress={handleChoosePhoto}>
+                    <Ionicons name="add" size={32} color="#718096" />
+                  </TouchableOpacity>
+                )}
               </ScrollView>
             )}
           </View>
@@ -236,13 +341,15 @@ const ReportMissingItem = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Thời điểm bị mất</Text>
             <View style={styles.dateInputWrapper}>
-              <TextInput
+              <TouchableOpacity
                 style={styles.input}
-                placeholder="dd/mm/yyyy"
-                placeholderTextColor="#718096"
-                value={dateLost}
-                onChangeText={setDateLost}
-              />
+                activeOpacity={0.7}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={{ color: dateLost ? '#000' : '#718096' }}>
+                  {dateLost || 'Chọn ngày'}
+                </Text>
+              </TouchableOpacity>
               <MaterialIcons
                 name="calendar-today"
                 size={20}
@@ -256,7 +363,7 @@ const ReportMissingItem = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Tags</Text>
             <Text style={styles.tagSubtitle}>
-              Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ đẵng hơn
+              Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ dàng hơn
             </Text>
 
             <TouchableOpacity
@@ -269,7 +376,6 @@ const ReportMissingItem = () => {
               <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
             </TouchableOpacity>
 
-            {/* Selected Tags */}
             {selectedTags.length > 0 && (
               <View style={styles.selectedTagsContainer}>
                 {selectedTags.map((tag, index) => (
@@ -280,7 +386,6 @@ const ReportMissingItem = () => {
               </View>
             )}
 
-            {/* Tag Dropdown List */}
             {showTagDropdown && (
               <View style={styles.tagDropdownList}>
                 {availableTags.map((tag, index) => (
@@ -300,8 +405,9 @@ const ReportMissingItem = () => {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
-      {/* Submit Button */}
+      {/* Submit Button - cố định ở dưới cùng */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
@@ -313,6 +419,48 @@ const ReportMissingItem = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Date Picker Modal cho iOS */}
+      {showDatePicker && Platform.OS === 'ios' && (
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="spinner"
+                onChange={onChangeDate}
+                themeVariant="light"
+                accentColor="#2B6CB0"
+                style={styles.datePickerStyle}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.modalButton} onPress={cancelDate}>
+                  <Text style={styles.modalButtonText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalButton} onPress={confirmDate}>
+                  <Text style={[styles.modalButtonText, { color: '#2B6CB0' }]}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Date Picker cho Android */}
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="calendar"
+          onChange={onChangeDate}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -409,14 +557,24 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   uploadedImage: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 8,
   },
   removeImageBtn: {
     position: 'absolute',
     top: -8,
     right: -8,
+  },
+  addMoreButton: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#EDF2F7',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   locationRow: {
     flexDirection: 'row',
@@ -520,6 +678,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: 420,
+    alignItems: 'center',
+  },
+  datePickerStyle: {
+    width: '100%',
+    height: 300,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 16,
+  },
+  modalButton: {
+    padding: 10,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '600',
   },
 });
 

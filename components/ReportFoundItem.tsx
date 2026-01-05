@@ -7,6 +7,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import {
   Alert,
   Image,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -15,7 +16,9 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 
@@ -33,7 +36,6 @@ function parseDDMMYYYY(input: string): Date | null {
   return date;
 }
 
-
 const ReportFoundItem = () => {
   const router = useRouter();
   const [itemName, setItemName] = useState('');
@@ -45,8 +47,63 @@ const ReportFoundItem = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [date, setDate] = useState(new Date());
 
-  const availableTags = ['Ba lô', 'Da', 'Nâu', 'Đen', 'Xanh', 'Đỏ', 'Laptop', 'Điện thoại'];
+ const availableTags = [
+  // Loại đồ vật phổ biến
+  'Ba lô',
+  'Túi xách',
+  'Ví tiền',
+  'Điện thoại',
+  'Laptop',
+  'Tai nghe',
+  'Sạc pin',
+  'Bình nước',
+  'Ô (dù)',
+  'Chìa khóa',
+  'Thẻ sinh viên',
+  'Sách vở',
+  'Áo khoác',
+  'Mũ nón',
+  'Kính mắt',
+
+  // Màu sắc
+  'Đen',
+  'Trắng',
+  'Xanh',
+  'Đỏ',
+  'Xám',
+  'Nâu',
+  'Hồng',
+
+  // Chất liệu / Đặc điểm
+  'Da',
+  'Vải',
+  'Nhựa',
+  'Kim loại',
+
+  // Vị trí (mới thêm)
+  'Thư viện',
+  'Thư viện Tạ Quang Bửu',
+  'Căng tin',
+  'Nhà ăn sinh viên',
+  'Ký túc xá',
+  'KTX Khu A',
+  'KTX Khu B',
+  'Giảng đường',
+  'Tòa nhà H1',
+  'Tòa nhà H2',
+  'Tòa nhà H3',
+  'Tòa nhà H6',
+  'Sân bóng đá',
+  'Sân thể thao',
+  'Bể bơi',
+  'Khu tự học',
+  'Cổng chính',
+  'Phòng thí nghiệm',
+  'Hành lang',
+].sort()
 
   const handleChoosePhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,7 +111,6 @@ const ReportFoundItem = () => {
       Alert.alert('Cần cấp quyền', 'Vui lòng cho phép truy cập thư viện ảnh.');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -68,7 +124,7 @@ const ReportFoundItem = () => {
       }
     }
   };
-
+  
   const handleTakePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -94,6 +150,13 @@ const ReportFoundItem = () => {
     newImages.splice(index, 1);
     setImages(newImages);
   };
+  
+  const formatDate = (date: Date) => {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -102,7 +165,9 @@ const ReportFoundItem = () => {
       setSelectedTags([...selectedTags, tag]);
     }
   };
-  const { getToken } = useAuth()
+
+  const { getToken } = useAuth();
+
   const handleSubmit = async () => {
     if (!itemName || !description || !location || !dateFound) {
       Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin bắt buộc.');
@@ -126,7 +191,7 @@ const ReportFoundItem = () => {
       const lostAtISO = parsedDate.toISOString();
 
       const payload = {
-        type: 'found', // 👈 fix cứng là lost
+        type: 'found',
         title: itemName,
         imageUrls: uploadedUrls,
         location: location,
@@ -135,8 +200,8 @@ const ReportFoundItem = () => {
         tags: selectedTags,
         description: description,
       };
-      const token = await getToken()
-      if (!token) return
+      const token = await getToken();
+      if (!token) return;
       const res = await fetch(`${API_BASE}/api/items`, {
         method: 'POST',
         headers: {
@@ -161,178 +226,210 @@ const ReportFoundItem = () => {
     }
   };
 
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    const currentDate = selectedDate || date;
+    setDate(currentDate);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      setDateFound(formatDate(currentDate));
+    }
+  };
+
+  const confirmDate = () => {
+    setDateFound(formatDate(date));
+    setShowDatePicker(false);
+  };
+
+  const cancelDate = () => {
+    setShowDatePicker(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Báo cáo đồ nhặt được</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 20}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#000000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Báo cáo đồ nhặt được</Text>
+          <View style={{ width: 24 }} />
+        </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.formContainer}>
-          {/* Description */}
-          <Text style={styles.subtitle}>
-            Vui lòng cung cấp thông tin chi tiết để giúp tìm lại chủ sở hữu.
-          </Text>
-
-          {/* Thêm ảnh món đồ (Bắt buộc) */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Thêm ảnh món đồ (Bắt buộc)</Text>
-
-            {images.length === 0 ? (
-              <View style={styles.photoUploadBox}>
-                <View style={styles.cameraIconCircle}>
-                  <Ionicons name="camera" size={32} color="#2B6CB0" />
-                </View>
-                <Text style={styles.photoUploadText}>
-                  Tải lên hình ảnh rõ ràng về món đồ bạn đã nhặt được
-                </Text>
-                <Text style={styles.photoUploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
-                <TouchableOpacity style={styles.uploadButton} onPress={handleTakePhoto}>
-                  <Text style={styles.uploadButtonText}>Tải ảnh lên</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageList}>
-                {images.map((uri, index) => (
-                  <View key={index} style={styles.imageWrapper}>
-                    <Image source={{ uri }} style={styles.uploadedImage} />
-                    <TouchableOpacity
-                      style={styles.removeImageBtn}
-                      onPress={() => removeImage(index)}
-                    >
-                      <Ionicons name="close-circle" size={24} color="#EDF2F7" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                {images.length < 5 && (
-                  <TouchableOpacity style={styles.addMoreButton} onPress={handleChoosePhoto}>
-                    <Ionicons name="add" size={32} color="#718096" />
-                  </TouchableOpacity>
-                )}
-              </ScrollView>
-            )}
-          </View>
-
-          {/* Tên món đồ */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tên món đồ</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ví dụ: Bình nước, ..."
-              placeholderTextColor="#718096"
-              value={itemName}
-              onChangeText={setItemName}
-            />
-          </View>
-
-          {/* Mô tả chi tiết */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mô tả chi tiết</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Mô tả chi tiết màu sắc, hình dáng, tình trạng, ..."
-              placeholderTextColor="#718096"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={5}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Vị trí nhìn thấy lần cuối */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vị trí nhìn thấy lần cuối</Text>
-            <View style={styles.locationRow}>
-              <TextInput
-                style={[styles.input, styles.locationInput]}
-                placeholder="Ví dụ: H1-101, Thư viện, ..."
-                placeholderTextColor="#718096"
-                value={location}
-                onChangeText={setLocation}
-              />
-              <View style={styles.buildingDropdown}>
-                <Text style={styles.buildingText}>{building}</Text>
-                <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
-              </View>
-            </View>
-          </View>
-
-          {/* Thời điểm bị mất */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Thời điểm bị mất</Text>
-            <View style={styles.dateInputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="dd/mm/yyyy"
-                placeholderTextColor="#718096"
-                value={dateFound}
-                onChangeText={setDateFound}
-              />
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color="#718096"
-                style={styles.calendarIcon}
-              />
-            </View>
-          </View>
-
-          {/* Tags */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tags</Text>
-            <Text style={styles.tagSubtitle}>
-              Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ đẵng hơn
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustContentInsets={false}
+          contentInset={{ bottom: 0 }}
+          contentInsetAdjustmentBehavior="automatic"
+        >
+          <View style={styles.formContainer}>
+            {/* Description */}
+            <Text style={styles.subtitle}>
+              Vui lòng cung cấp thông tin chi tiết để giúp tìm lại chủ sở hữu.
             </Text>
 
-            <TouchableOpacity
-              style={styles.tagDropdown}
-              onPress={() => setShowTagDropdown(!showTagDropdown)}
-            >
-              <Text style={styles.tagDropdownText}>
-                {selectedTags.length > 0 ? `Đã chọn ${selectedTags.length} tags` : 'Chọn các tags phù hợp'}
-              </Text>
-              <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
-            </TouchableOpacity>
+            {/* Thêm ảnh món đồ (Bắt buộc) */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Thêm ảnh món đồ (Bắt buộc)</Text>
 
-            {/* Selected Tags */}
-            {selectedTags.length > 0 && (
-              <View style={styles.selectedTagsContainer}>
-                {selectedTags.map((tag, index) => (
-                  <View key={index} style={styles.tagChip}>
-                    <Text style={styles.tagChipText}>{tag}</Text>
+              {images.length === 0 ? (
+                <View style={styles.photoUploadBox}>
+                  <View style={styles.cameraIconCircle}>
+                    <Ionicons name="camera" size={32} color="#2B6CB0" />
                   </View>
-                ))}
-              </View>
-            )}
-
-            {/* Tag Dropdown List */}
-            {showTagDropdown && (
-              <View style={styles.tagDropdownList}>
-                {availableTags.map((tag, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.tagOption}
-                    onPress={() => toggleTag(tag)}
-                  >
-                    <Text style={styles.tagOptionText}>{tag}</Text>
-                    {selectedTags.includes(tag) && (
-                      <Ionicons name="checkmark" size={20} color="#2B6CB0" />
-                    )}
+                  <Text style={styles.photoUploadText}>
+                    Tải lên hình ảnh rõ ràng về món đồ bạn đã nhặt được
+                  </Text>
+                  <Text style={styles.photoUploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
+                  <TouchableOpacity style={styles.uploadButton} onPress={handleTakePhoto}>
+                    <Text style={styles.uploadButtonText}>Tải ảnh lên</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
-      </ScrollView>
+                </View>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageList}>
+                  {images.map((uri, index) => (
+                    <View key={index} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.uploadedImage} />
+                      <TouchableOpacity
+                        style={styles.removeImageBtn}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#EDF2F7" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {images.length < 5 && (
+                    <TouchableOpacity style={styles.addMoreButton} onPress={handleChoosePhoto}>
+                      <Ionicons name="add" size={32} color="#718096" />
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
+              )}
+            </View>
 
-      {/* Submit Button */}
+            {/* Tên món đồ */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Tên món đồ</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ví dụ: Bình nước, ..."
+                placeholderTextColor="#718096"
+                value={itemName}
+                onChangeText={setItemName}
+              />
+            </View>
+
+            {/* Mô tả chi tiết */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Mô tả chi tiết</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Mô tả chi tiết màu sắc, hình dáng, tình trạng, ..."
+                placeholderTextColor="#718096"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+              />
+            </View>
+
+            {/* Vị trí nhìn thấy lần cuối */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Vị trí nhìn thấy lần cuối</Text>
+              <View style={styles.locationRow}>
+                <TextInput
+                  style={[styles.input, styles.locationInput]}
+                  placeholder="Ví dụ: H1-101, Thư viện, ..."
+                  placeholderTextColor="#718096"
+                  value={location}
+                  onChangeText={setLocation}
+                />
+                <View style={styles.buildingDropdown}>
+                  <Text style={styles.buildingText}>{building}</Text>
+                  <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+                </View>
+              </View>
+            </View>
+
+            {/* Thời điểm bị mất */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Thời điểm bị mất</Text>
+              <View style={styles.dateInputWrapper}>
+                <TouchableOpacity
+                  style={styles.input}
+                  activeOpacity={0.7}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={{ color: dateFound ? '#000' : '#718096' }}>
+                    {dateFound || 'Chọn ngày'}
+                  </Text>
+                </TouchableOpacity>
+                <MaterialIcons
+                  name="calendar-today"
+                  size={20}
+                  color="#718096"
+                  style={styles.calendarIcon}
+                />
+              </View>
+            </View>
+
+            {/* Tags */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Tags</Text>
+              <Text style={styles.tagSubtitle}>
+                Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ dàng hơn
+              </Text>
+
+              <TouchableOpacity
+                style={styles.tagDropdown}
+                onPress={() => setShowTagDropdown(!showTagDropdown)}
+              >
+                <Text style={styles.tagDropdownText}>
+                  {selectedTags.length > 0 ? `Đã chọn ${selectedTags.length} tags` : 'Chọn các tags phù hợp'}
+                </Text>
+                <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+              </TouchableOpacity>
+
+              {selectedTags.length > 0 && (
+                <View style={styles.selectedTagsContainer}>
+                  {selectedTags.map((tag, index) => (
+                    <View key={index} style={styles.tagChip}>
+                      <Text style={styles.tagChipText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {showTagDropdown && (
+                <View style={styles.tagDropdownList}>
+                  {availableTags.map((tag, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.tagOption}
+                      onPress={() => toggleTag(tag)}
+                    >
+                      <Text style={styles.tagOptionText}>{tag}</Text>
+                      {selectedTags.includes(tag) && (
+                        <Ionicons name="checkmark" size={20} color="#2B6CB0" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Submit Button - cố định ở dưới cùng */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
@@ -344,6 +441,48 @@ const ReportFoundItem = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Date Picker Modal cho iOS */}
+      {showDatePicker && Platform.OS === 'ios' && (
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="spinner"
+                onChange={onChangeDate}
+                accentColor="#2B6CB0"
+                themeVariant="light"
+                style={styles.datePickerStyle}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity style={styles.modalButton} onPress={cancelDate}>
+                  <Text style={styles.modalButtonText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalButton} onPress={confirmDate}>
+                  <Text style={[styles.modalButtonText, { color: '#2B6CB0' }]}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Date Picker cho Android */}
+      {showDatePicker && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="calendar"
+          onChange={onChangeDate}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -584,6 +723,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxHeight: 400,
+    alignItems: 'center',
+  },
+  datePickerStyle: {
+    width: '100%',
+    height: 300,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 16,
+  },
+  modalButton: {
+    padding: 10,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '600',
   },
 });
 
