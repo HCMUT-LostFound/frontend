@@ -1,62 +1,43 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useFocusEffect } from 'expo-router'
 import { useCallback } from 'react'
-import React, { useState, useEffect } from 'react'
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useState } from 'react'
+import {
+  Image,
+  Modal,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useProfile } from '@/hooks/useProfile'
 import { useAuth } from '@clerk/clerk-expo'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
+
 type TabType = 'lost' | 'found'
 
 interface Item {
   id: string
-  name: string
-  date: string
-  image: string
-  type: TabType
-}
-
-// const SAMPLE_LOST_ITEMS: Item[] = [
-//   { id: '1', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
-//   { id: '2', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
-//   { id: '3', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'lost' },
-// ]
-
-// const SAMPLE_FOUND_ITEMS: Item[] = [
-//   { id: '4', name: 'Balo da', date: '26/10/2025', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200', type: 'found' },
-// ]
-
-type ItemType = 'lost' | 'found'
-
-interface Item {
-  id: string
   title: string
-  type: ItemType
+  type: TabType
   imageUrls: string[] | null
   lostAt: string | null
 }
-
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<TabType>('lost')
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState<'found' | 'return'>('found')
-  // const [lostItems, setLostItems] = useState(SAMPLE_LOST_ITEMS)
-  // const [foundItems, setFoundItems] = useState(SAMPLE_FOUND_ITEMS)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-  const profile = useProfile()
-  const { signOut, isLoaded, isSignedIn } = useAuth()
-  const { getToken } = useAuth()
 
-  const handleButtonPress = (itemId: string, type: 'found' | 'return') => {
-    setSelectedItemId(itemId)
-    setModalType(type)
-    setShowModal(true)
-  }
+  const profile = useProfile()
+  const { signOut, isLoaded, isSignedIn, getToken } = useAuth()
+
   const fetchMyItems = async () => {
     try {
       const token = await getToken()
@@ -85,20 +66,12 @@ export default function Profile() {
   useFocusEffect(
     useCallback(() => {
       if (!isLoaded || !isSignedIn) return
+      setLoading(true)
       fetchMyItems()
     }, [isLoaded, isSignedIn])
   )
-  // const handleConfirm = () => {
-  //   if (selectedItemId) {
-  //     if (modalType === 'found') {
-  //       setLostItems(prev => prev.filter(item => item.id !== selectedItemId))
-  //     } else {
-  //       setFoundItems(prev => prev.filter(item => item.id !== selectedItemId))
-  //     }
-  //   }
-  //   setShowModal(false)
-  //   setSelectedItemId(null)
-  // }
+
+  const currentItems = items.filter((item) => item.type === activeTab)
 
   const handleConfirm = async () => {
     if (!selectedItemId) return
@@ -107,16 +80,13 @@ export default function Profile() {
       const token = await getToken()
       if (!token) return
 
-      const res = await fetch(
-        `${API_BASE}/api/items/${selectedItemId}/confirm`,
-        {
-          method: 'POST', // backend của bạn dùng POST
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
+      const res = await fetch(`${API_BASE}/api/items/${selectedItemId}/confirm`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
 
       if (!res.ok) {
         const text = await res.text()
@@ -124,7 +94,7 @@ export default function Profile() {
         return
       }
 
-      // ✅ thành công → đóng modal + reload list
+      // Thành công → đóng modal và reload danh sách
       setShowModal(false)
       setSelectedItemId(null)
       fetchMyItems()
@@ -133,16 +103,43 @@ export default function Profile() {
     }
   }
 
-  const currentItems = items.filter(
-    (item) => item.type === activeTab
+  const renderItem = ({ item }: { item: Item }) => (
+    <View style={styles.itemCard}>
+      <Image
+        source={{
+          uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/100',
+        }}
+        style={styles.itemImage}
+      />
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemName}>{item.title}</Text>
+        <Text style={styles.itemDate}>
+          {activeTab === 'lost'
+            ? `Ngày báo mất: ${item.lostAt ? new Date(item.lostAt).toLocaleDateString('vi-VN') : '—'}`
+            : `Ngày nhặt được: ${item.lostAt ? new Date(item.lostAt).toLocaleDateString('vi-VN') : '—'}`
+          }
+        </Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => {
+            setSelectedItemId(item.id)
+            setModalType(activeTab === 'lost' ? 'found' : 'return')
+            setShowModal(true)
+          }}
+        >
+          <Text style={styles.actionButtonText}>
+            {activeTab === 'lost' ? 'Đã tìm thấy' : 'Đã trả lại'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   )
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Title */}
+      {/* Header cố định */}
       <Text style={styles.title}>Hồ sơ</Text>
 
-      {/* Profile Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
@@ -159,6 +156,7 @@ export default function Profile() {
             <Ionicons name="pencil" size={14} color="#fff" />
           </TouchableOpacity>
         </View>
+
         <View style={styles.profileInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.userName}>{profile?.fullName ?? 'User'}</Text>
@@ -166,11 +164,12 @@ export default function Profile() {
               <Ionicons name="pencil" size={16} color="#333" />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.logoutButton}
+
+          <TouchableOpacity
+            style={styles.logoutButton}
             onPress={async () => {
               try {
                 await signOut()
-                console.log('Signed out')
               } catch (err) {
                 console.error('Logout error:', err)
               }
@@ -182,7 +181,7 @@ export default function Profile() {
         </View>
       </View>
 
-      {/* Tabs */}
+      {/* Tab cố định */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'lost' && styles.activeTab]}
@@ -207,59 +206,23 @@ export default function Profile() {
         <Text style={styles.emptyText}>Đang tải dữ liệu...</Text>
       ) : currentItems.length === 0 ? (
         <Text style={styles.emptyText}>
-          {activeTab === 'lost'
-            ? 'Hiện không có đồ bị mất'
-            : 'Hiện không có đồ nhặt được'}
+          {activeTab === 'lost' ? 'Hiện không có đồ bị mất' : 'Hiện không có đồ nhặt được'}
         </Text>
       ) : (
-        currentItems.map((item) => (
-          <View key={item.id} style={styles.itemCard}>
-            <Image
-              source={{
-                uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/100',
-              }}
-              style={styles.itemImage}
-            />
-
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{item.title}</Text>
-
-              <Text style={styles.itemDate}>
-                {activeTab === 'lost'
-                  ? `Ngày báo mất: ${item.lostAt
-                    ? new Date(item.lostAt).toLocaleDateString('vi-VN')
-                    : '—'
-                  }`
-                  : `Ngày nhặt được: ${item.lostAt
-                    ? new Date(item.lostAt).toLocaleDateString('vi-VN')
-                    : '—'
-                  }`}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => {
-                  setSelectedItemId(item.id)
-                  setModalType(activeTab === 'lost' ? 'found' : 'return')
-                  setShowModal(true)
-                }
-
-                }
-              >
-                <Text style={styles.actionButtonText}>
-                  {activeTab === 'lost' ? 'Đã tìm thấy' : 'Đã trả lại'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))
+        <FlatList
+          data={currentItems}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 30 }}
+          style={{ flex: 1 }}
+        />
       )}
 
-
-      {/* Confirmation Modal */}
+      {/* Modal xác nhận */}
       <Modal
         visible={showModal}
-        transparent={true}
+        transparent
         animationType="fade"
         onRequestClose={() => setShowModal(false)}
       >
@@ -278,10 +241,7 @@ export default function Profile() {
               >
                 <Text style={styles.cancelButtonText}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleConfirm}
-              >
+              <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
                 <Text style={styles.confirmButtonText}>Xác nhận</Text>
               </TouchableOpacity>
             </View>
@@ -296,7 +256,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
   },
   title: {
     fontSize: 24,
@@ -304,11 +263,13 @@ const styles = StyleSheet.create({
     color: '#1E1E1E',
     marginTop: 20,
     marginBottom: 20,
+    paddingHorizontal: 20,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 25,
+    paddingHorizontal: 20,
   },
   avatarContainer: {
     position: 'relative',
@@ -367,6 +328,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
     marginBottom: 15,
+    paddingHorizontal: 20,
   },
   tab: {
     flex: 1,
@@ -385,26 +347,24 @@ const styles = StyleSheet.create({
     color: '#2B6CB0',
     fontWeight: '600',
   },
-  listContainer: {
-    flex: 1,
-  },
   emptyText: {
     textAlign: 'center',
     color: '#999',
     fontSize: 14,
-    marginTop: 20,
+    marginTop: 40,
+    paddingHorizontal: 20,
   },
   itemCard: {
     flexDirection: 'row',
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    paddingHorizontal: 20,
   },
   itemImage: {
     width: 100,
     height: 100,
     borderRadius: 10,
-    backgroundColor: '#2B6CB0',
   },
   itemInfo: {
     flex: 1,
