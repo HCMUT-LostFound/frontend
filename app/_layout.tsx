@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import AuthSync from "@/components/AuthSync";
 import { ProfileProvider } from "@/contexts/profileContext";
 import * as Sentry from '@sentry/react-native';
+import { useDomainGuard } from "@/hooks/useDomainGuard"
 
 Sentry.init({
   dsn: 'https://405fee4d9671113875fb839afd371d19@o4510499923427328.ingest.us.sentry.io/4510658692775936',
@@ -56,10 +57,15 @@ function AuthGate() {
 
   return null
 }
-
+function DomainGate() {
+  useDomainGuard()
+  return null
+}
 export default Sentry.wrap(function RootLayout() {
+  // useDomainGuard()
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+      <DomainGate />
       <AuthSync />
       <AuthGate />
       <ProfileProvider>
