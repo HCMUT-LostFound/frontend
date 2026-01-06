@@ -51,16 +51,18 @@ export default function Home() {
   const { getToken } = useAuth()
   const router = useRouter()
 
-  const handleChatItem = async (itemId: string) => {
+  const handleChatWithUser = async (itemId: string) => {
     try {
       const token = await getToken()
       if (!token) return
       
       const chat = await createOrGetChat(token, itemId)
-      // Navigate to chat tab and select this chat
-      router.push('/(tabs)/chat')
-      // Note: In a real app, you'd pass the chat ID via navigation params
-      // For now, user will need to select the chat manually
+      setIsDetailModalVisible(false)
+      // Navigate to chat tab with chat ID
+      router.push({
+        pathname: '/(tabs)/chat',
+        params: { chatId: chat.id }
+      })
     } catch (err) {
       console.error('Create chat error:', err)
     }
@@ -238,6 +240,16 @@ export default function Home() {
                             : '—'}
                         </Text>
                       </View>
+
+                      {/* User info */}
+                      {item.user && (
+                        <View style={styles.itemRow}>
+                          <Ionicons name="person-outline" size={16} color="#666" />
+                          <Text style={styles.itemText} numberOfLines={1}>
+                            {item.user.fullName || 'Người dùng'}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
 
@@ -349,15 +361,35 @@ export default function Home() {
                 {/* Title */}
                 <Text style={styles.detailTitle}>{selectedItem?.title}</Text>
 
-                {/* Reporter info */}
+                {/* Reporter info with chat icon */}
                 <View style={styles.detailSection}>
                   <View style={styles.detailIconCircle}>
                     <Ionicons name="person" size={28} color="#718096" />
                   </View>
-                  <View style={styles.detailTextBlock}>
-                    <Text style={styles.detailLabel}>Người báo mất</Text>
-                    <Text style={styles.detailValue}>{selectedItem?.reporter?.fullName ?? "-"}</Text>
+                  <View style={[styles.detailTextBlock, { flex: 1 }]}>
+                    <Text style={styles.detailLabel}>
+                      {selectedItem?.type === 'lost' ? 'Người báo mất' : 'Người nhặt được'}
+                    </Text>
+                    <View style={styles.userInfoRow}>
+                      {selectedItem?.user?.avatarUrl ? (
+                        <Image 
+                          source={{ uri: selectedItem.user.avatarUrl }} 
+                          style={styles.userAvatar}
+                        />
+                      ) : null}
+                      <Text style={styles.detailValue}>
+                        {selectedItem?.user?.fullName ?? "-"}
+                      </Text>
+                    </View>
                   </View>
+                  {selectedItem?.id && (
+                    <TouchableOpacity
+                      style={styles.chatIconButton}
+                      onPress={() => handleChatWithUser(selectedItem.id)}
+                    >
+                      <Ionicons name="chatbubble-ellipses" size={24} color="#2B6CB0" />
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Description */}
@@ -393,12 +425,6 @@ export default function Home() {
                     </Text>
                   </View>
                 </View>
-
-                {/* Contact button */}
-                <TouchableOpacity style={styles.contactButton}>
-                  <Text style={styles.contactButtonText}>Liên hệ</Text>
-                  <Ionicons name="send" size={20} color="#fff" />
-                </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -656,6 +682,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 4,
   },
+  userInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  userAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#E0E0E0',
+  },
+  chatIconButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#EBF8FF',
+    marginLeft: 8,
+  },
   detailLabel: {
     fontSize: 13,
     color: '#718096',
@@ -671,20 +715,5 @@ const styles = StyleSheet.create({
     color: '#4A5568',
     lineHeight: 22,
     marginBottom: 20,
-  },
-  contactButton: {
-    backgroundColor: '#2B6CB0',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  contactButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 })

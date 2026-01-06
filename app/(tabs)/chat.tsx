@@ -4,9 +4,11 @@ import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, Te
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@clerk/clerk-expo'
 import { useFocusEffect } from '@react-navigation/native'
+import { useLocalSearchParams } from 'expo-router'
 import { fetchChats, fetchMessages, sendMessage, Chat, ChatMessage } from '@/services/chatService'
 
 export default function ChatScreen() {
+  const params = useLocalSearchParams<{ chatId?: string }>()
   const [searchText, setSearchText] = useState('')
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
@@ -15,20 +17,39 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const hasLoadedChatsRef = useRef(false)
   const { getToken } = useAuth()
 
   // Load chats list
   const loadChats = useCallback(async () => {
+    // Prevent concurrent calls
+    if (loading) return
+    
     try {
+      setLoading(true)
       const token = await getToken()
-      if (!token) return
+      if (!token) {
+        setLoading(false)
+        return
+      }
       const data = await fetchChats(token)
       setChats(data)
+      
+      // Auto-select chat if chatId is provided in params (only once)
+      if (params.chatId) {
+        setSelectedChat(prev => {
+          if (prev) return prev // Don't change if already selected
+          const chatToSelect = data.find(c => c.id === params.chatId)
+          return chatToSelect || null
+        })
+      }
     } catch (err) {
       console.error('Load chats error:', err)
+    } finally {
+      setLoading(false)
     }
-  }, [getToken])
+  }, [getToken, params.chatId, loading])
 
   // Load messages for selected chat
   const loadMessages = useCallback(async (chatId: string, afterMessageId?: string) => {
@@ -58,61 +79,91 @@ export default function ChatScreen() {
 
   // Start polling for new messages
   useEffect(() => {
-    if (selectedChat) {
-      // Load initial messages
-      loadMessages(selectedChat.id)
-      
-      // Start polling every 0.5s
-      const intervalId = setInterval(() => {
-        setMessages(currentMessages => {
-          const lastMessageId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : undefined
-          // Load new messages asynchronously
-          getToken().then(token => {
-            if (token) {
-              fetchMessages(token, selectedChat.id, lastMessageId).then(newMessages => {
-                if (newMessages.length > 0) {
-                  setMessages(prev => {
-                    const existingIds = new Set(prev.map(m => m.id))
-                    const uniqueNew = newMessages.filter(m => !existingIds.has(m.id))
-                    return [...prev, ...uniqueNew]
-                  })
-                  setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true })
-                  }, 100)
-                }
-              }).catch(() => {})
-            }
-          })
-          return currentMessages
-        })
-      }, 500)
-      
-      pollingIntervalRef.current = intervalId
-      
-      return () => {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current)
-        }
-      }
-    } else {
+    if (!selectedChat) {
       // Stop polling when no chat selected
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
       }
+      return
     }
-  }, [selectedChat?.id, getToken])
 
-  // Load chats when screen is focused
+    // Load initial messages
+    loadMessages(selectedChat.id)
+    
+    // Start polling every 2s (reduced from 0.5s to avoid too many requests)
+    let isPolling = false
+    const intervalId = setInterval(() => {
+      // Prevent concurrent polling
+      if (isPolling) return
+      isPolling = true
+      
+      getToken().then(token => {
+        if (!token || !selectedChat) {
+          isPolling = false
+          return
+        }
+        
+        setMessages(currentMessages => {
+          const lastMessageId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : undefined
+          
+          fetchMessages(token, selectedChat.id, lastMessageId).then(newMessages => {
+            if (newMessages.length > 0) {
+              setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id))
+                const uniqueNew = newMessages.filter(m => !existingIds.has(m.id))
+                if (uniqueNew.length > 0) {
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true })
+                  }, 100)
+                  return [...prev, ...uniqueNew]
+                }
+                return prev
+              })
+            }
+            isPolling = false
+          }).catch(() => {
+            isPolling = false
+          })
+          
+          return currentMessages
+        })
+      })
+    }, 2000) // Changed from 500ms to 2000ms
+    
+    pollingIntervalRef.current = intervalId
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      pollingIntervalRef.current = null
+    }
+  }, [selectedChat?.id, getToken, loadMessages])
+
+  // Load chats when screen is focused (only when not selected chat)
+  // Use a ref to track if we've loaded chats to avoid multiple calls
   useFocusEffect(
     useCallback(() => {
-      loadChats()
-      return () => {
-        // Cleanup
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current)
+      if (!selectedChat && !loading) {
+        // Only load if not already loading and not in a chat
+        if (!hasLoadedChatsRef.current) {
+          loadChats()
+          hasLoadedChatsRef.current = true
         }
       }
-    }, [loadChats])
+      // Reset flag when leaving chat view
+      if (selectedChat) {
+        hasLoadedChatsRef.current = false
+      }
+      // Cleanup on unmount
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+          pollingIntervalRef.current = null
+        }
+      }
+    }, [loadChats, selectedChat, loading])
   )
 
   // Handle send message
@@ -130,8 +181,10 @@ export default function ChatScreen() {
       // Add message to list immediately
       setMessages(prev => [...prev, newMessage])
       
-      // Reload chats to update last message
-      loadChats()
+      // Reload chats to update last message (only if not in a chat view)
+      if (!selectedChat) {
+        loadChats()
+      }
       
       // Auto scroll
       setTimeout(() => {
