@@ -42,20 +42,79 @@ export default function Home() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false)
 
+  // Detail modal states
+  const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false)
+
   const { getToken } = useAuth()
 
-   const loadItems = async () => {
+  const loadItems = async () => {
     setLoading(true)
-    try {
-      const token = await getToken()
-      if (!token) return
-      const data = await fetchPublicItems(token)
-      setItems(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    // try {
+    //   const token = await getToken()
+    //   if (!token) return
+    //   const data = await fetchPublicItems(token)
+    //   setItems(data)
+    // } catch (err) {
+    //   console.error(err)
+    // } finally {
+    //   setLoading(false)
+    // }
+
+
+    // MOCK DATA 
+    const mockData = [
+      {
+        id: 1,
+        type: 'lost' as const,
+        title: 'Balo da',
+        location: 'CS2, H1-304',
+        campus: '',
+        lostAt: '2025-10-26T00:00:00Z',
+        imageUrls: [
+          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
+        ],
+        tags: ['Ba lô', 'Da', 'Nâu'],
+        reporterName: 'Lê Văn B',
+        description: 'Balo da màu nâu, của X, bên trong có 2 cuốn sách, viết, chìa khóa.',
+        detailLocation: 'CS1, Thư viện',
+      },
+      {
+        id: 2,
+        type: 'lost' as const,
+        title: 'Balo da',
+        location: 'CS2, H1-304',
+        campus: '',
+        lostAt: '2025-10-26T00:00:00Z',
+        imageUrls: [
+          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
+        ],
+        tags: ['Ba lô', 'Da', 'Nâu'],
+        reporterName: 'Lê Văn B',
+        description: 'Balo da màu nâu, của X, bên trong có 2 cuốn sách, viết, chìa khóa.',
+        detailLocation: 'CS1, Thư viện',
+      },
+      {
+        id: 3,
+        type: 'lost' as const,
+        title: 'Balo da',
+        location: 'CS2, H1-304',
+        campus: '',
+        lostAt: '2025-10-26T00:00:00Z',
+        imageUrls: [
+          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
+        ],
+        tags: ['Ba lô', 'Da', 'Nâu'],
+        reporterName: 'Lê Văn B',
+        description: 'Balo da màu nâu, của X, bên trong có 2 cuốn sách, viết, chìa khóa.',
+        detailLocation: 'CS1, Thư viện',
+      },
+    ]
+    // Delay giả lập loading
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    setItems(mockData)
+    setLoading(false)
   }
 
   useFocusEffect(
@@ -169,50 +228,59 @@ export default function Home() {
             <Text style={styles.emptyText}>Không tìm thấy món đồ nào.</Text>
           ) : (
             filteredItems.map(item => (
-              <View key={item.id} style={styles.itemCard}>
-                {/* Phần trên: Hình + Thông tin */}
-                <View style={styles.cardTop}>
-                  <View style={styles.imageContainer}>
-                    <Image
-                      source={{
-                        uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/127',
-                      }}
-                      style={styles.itemImage}
-                    />
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => {
+                  setSelectedItem(item)
+                  setIsDetailModalVisible(true)
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.itemCard}>
+                  {/* Phần trên: Hình + Thông tin */}
+                  <View style={styles.cardTop}>
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={{
+                          uri: item.imageUrls?.[0] ?? 'https://via.placeholder.com/127',
+                        }}
+                        style={styles.itemImage}
+                      />
+                    </View>
+
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemTitle} numberOfLines={2} ellipsizeMode="tail">
+                        {item.title}
+                      </Text>
+
+                      <View style={styles.itemRow}>
+                        <Ionicons name="location-outline" size={16} color="#666" />
+                        <Text style={styles.itemText}>
+                          {item.location}{item.campus ? ` (${item.campus})` : ''}
+                        </Text>
+                      </View>
+
+                      <View style={styles.itemRow}>
+                        <Ionicons name="calendar-outline" size={16} color="#666" />
+                        <Text style={styles.itemText}>
+                          {item.lostAt
+                            ? new Date(item.lostAt).toLocaleDateString('vi-VN')
+                            : '—'}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
 
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemTitle} numberOfLines={2} ellipsizeMode="tail">
-                      {item.title}
-                    </Text>
-
-                    <View style={styles.itemRow}>
-                      <Ionicons name="location-outline" size={16} color="#666" />
-                      <Text style={styles.itemText}>
-                        {item.location} ({item.campus})
-                      </Text>
-                    </View>
-
-                    <View style={styles.itemRow}>
-                      <Ionicons name="calendar-outline" size={16} color="#666" />
-                      <Text style={styles.itemText}>
-                        {item.lostAt
-                          ? new Date(item.lostAt).toLocaleDateString('vi-VN')
-                          : '—'}
-                      </Text>
-                    </View>
+                  {/* Phần dưới: Tags - tự động wrap và tăng chiều cao */}
+                  <View style={styles.tagsContainer}>
+                    {(item.tags ?? []).map((tag: string) => (
+                      <View key={tag} style={styles.tag}>
+                        <Text style={styles.tagText}>{tag}</Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
-
-                {/* Phần dưới: Tags - tự động wrap và tăng chiều cao */}
-                <View style={styles.tagsContainer}>
-                  {(item.tags ?? []).map((tag: string) => (
-                    <View key={tag} style={styles.tag}>
-                      <Text style={styles.tagText}>{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
@@ -285,6 +353,82 @@ export default function Home() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* DETAIL MODAL - Popup chi tiết đồ vật */}
+      <Modal visible={isDetailModalVisible} transparent animationType="fade">
+        <TouchableWithoutFeedback onPress={() => setIsDetailModalVisible(false)}>
+          <View style={styles.detailOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.detailContent}>
+                {/* Close button */}
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setIsDetailModalVisible(false)}
+                >
+                  <Ionicons name="close-circle" size={32} color="#666" />
+                </TouchableOpacity>
+
+                {/* Item image */}
+                <Image
+                  source={{
+                    uri: selectedItem?.imageUrls?.[0] ?? 'https://via.placeholder.com/350',
+                  }}
+                  style={styles.detailImage}
+                />
+
+                {/* Title */}
+                <Text style={styles.detailTitle}>{selectedItem?.title}</Text>
+
+                {/* Reporter info */}
+                <View style={styles.detailSection}>
+                  <View style={styles.detailIconCircle}>
+                    <Ionicons name="person" size={28} color="#718096" />
+                  </View>
+                  <View style={styles.detailTextBlock}>
+                    <Text style={styles.detailLabel}>Người báo mất</Text>
+                    <Text style={styles.detailValue}>{selectedItem?.reporterName}</Text>
+                  </View>
+                </View>
+
+                {/* Description */}
+                <Text style={styles.detailDescription}>{selectedItem?.description}</Text>
+
+                {/* Location */}
+                <View style={styles.detailSection}>
+                  <View style={styles.detailIconCircle}>
+                    <Ionicons name="location-outline" size={28} color="#718096" />
+                  </View>
+                  <View style={styles.detailTextBlock}>
+                    <Text style={styles.detailLabel}>Địa điểm</Text>
+                    <Text style={styles.detailValue}>{selectedItem?.detailLocation}</Text>
+                  </View>
+                </View>
+
+                {/* Time */}
+                <View style={styles.detailSection}>
+                  <View style={styles.detailIconCircle}>
+                    <Ionicons name="calendar-outline" size={28} color="#718096" />
+                  </View>
+                  <View style={styles.detailTextBlock}>
+                    <Text style={styles.detailLabel}>Thời gian</Text>
+                    <Text style={styles.detailValue}>
+                      {selectedItem?.lostAt
+                        ? new Date(selectedItem.lostAt).toLocaleDateString('vi-VN')
+                        : '—'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Contact button */}
+                <TouchableOpacity style={styles.contactButton}>
+                  <Text style={styles.contactButtonText}>Liên hệ</Text>
+                  <Ionicons name="send" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -347,7 +491,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderBottomWidth: 2,   // đường kẻ ngang đậm hơn ở dưới cùng
-  borderBottomColor: '#DDDDDD',
+    borderBottomColor: '#DDDDDD',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -377,7 +521,7 @@ const styles = StyleSheet.create({
   itemInfo: {
     flex: 1,
     height: 127,
-    marginLeft:25,
+    marginLeft: 25,
     paddingHorizontal: 12,
     justifyContent: 'space-between',
     paddingVertical: 8,
@@ -461,4 +605,93 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   applyButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+
+  // ===== DETAIL MODAL STYLES =====
+  detailOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  detailContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailImage: {
+    width: '100%',
+    height: 250,
+    borderRadius: 15,
+    backgroundColor: '#F0F0F0',
+    marginBottom: 15,
+  },
+  detailTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1E1E1E',
+    marginBottom: 20,
+  },
+  detailSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  detailIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E8EAF0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  detailTextBlock: {
+    flex: 1,
+    paddingTop: 4,
+  },
+  detailLabel: {
+    fontSize: 13,
+    color: '#718096',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1E1E1E',
+  },
+  detailDescription: {
+    fontSize: 15,
+    color: '#4A5568',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  contactButton: {
+    backgroundColor: '#2B6CB0',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  contactButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 })
