@@ -1,11 +1,12 @@
 import { useWarmUpBrowser } from '@/hooks/useWarmUpBrowser'
-import { useAuth, useSSO } from '@clerk/clerk-expo'
+import { useAuth, useSSO, useUser } from '@clerk/clerk-expo'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import * as AuthSession from 'expo-auth-session'
 import { router } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -49,51 +50,58 @@ export default function LoginScreen() {
   useWarmUpBrowser()
 
   const { startSSOFlow } = useSSO()
-  const {getToken, isSignedIn} = useAuth()
-  const {signOut} = useAuth()
+  const { getToken, isSignedIn } = useAuth()
+  const { signOut } = useAuth()
   const { width, height } = useWindowDimensions() // Lấy dimensions động, cập nhật khi xoay
-
+  const { user } = useUser()
+  const ALLOWED_DOMAINS = ['hcmut.edu.vn']
   const onPress = useCallback(async () => {
     try {
-      const { createdSessionId, setActive, signIn, signUp } = await startSSOFlow({
+      const { createdSessionId, setActive } = await startSSOFlow({
         strategy: 'oauth_google',
         redirectUrl: AuthSession.makeRedirectUri(),
       })
 
-      if (createdSessionId) {
-        setActive!({
-          session: createdSessionId,
-          navigate: async ({ session }) => {
-            if (session?.currentTask) {
-              console.log(session?.currentTask)
-              router.push('/')
-              return
-            }
-            router.push('/(tabs)/home')
-          },
-        })
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId })
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2))
     }
   }, [])
 
+
+  useEffect(() => {
+    if (!isSignedIn || !user) return
+
+    const email = user.primaryEmailAddress?.emailAddress
+    const domain = email?.split('@')[1]
+
+    if (!email || !domain || !ALLOWED_DOMAINS.includes(domain)) {
+      signOut()
+      return
+    }
+
+    router.replace('/home')
+  }, [isSignedIn, user])
+
+
   return (
     <View style={styles.container}>
       <View style={[styles.headerDiv, { height: normalize(59, 'height', width, height) }]} />
-      <View style={[styles.contentDiv, { 
-        height: normalize(843, 'height', width, height), 
+      <View style={[styles.contentDiv, {
+        height: normalize(843, 'height', width, height),
         width: normalize(390, 'width', width, height), // Scale width động
         gap: normalize(20, 'height', width, height),
       }]}>
         <View style={[styles.logoDiv, { height: normalize(300, 'height', width, height) }]}>
-          <View style={[styles.logoContainer, { 
-            width: normalize(170, 'width', width, height), 
-            height: normalize(170, 'height', width, height) 
+          <View style={[styles.logoContainer, {
+            width: normalize(170, 'width', width, height),
+            height: normalize(170, 'height', width, height)
           }]}>
-            <Image 
-              source={require('@/assets/images/logo.png')} 
-              style={styles.logo} 
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={styles.logo}
               resizeMode="contain"
             />
           </View>
@@ -105,7 +113,7 @@ export default function LoginScreen() {
           <Text style={[styles.subtitleText, { fontSize: normalize(24, 'width', width, height) }]}>Đăng nhập để tiếp tục</Text>
         </View>
         <View style={[styles.googleButtonDiv, { height: normalize(60, 'height', width, height) }]}>
-          <TouchableOpacity style={[styles.googleButton, { 
+          <TouchableOpacity style={[styles.googleButton, {
             width: normalize(390, 'width', width, height), // Scale button width
             height: normalize(60, 'height', width, height),
             borderRadius: normalize(20, 'width', width, height),
@@ -123,15 +131,15 @@ export default function LoginScreen() {
           </TouchableOpacity> */}
         </View>
         <View style={[styles.emailInfoDiv, { height: normalize(80, 'height', width, height) }]}>
-          <Text style={[styles.emailInfoText, { 
+          <Text style={[styles.emailInfoText, {
             fontSize: normalize(20, 'width', width, height),
             width: normalize(307, 'width', width, height),
           }]}>Sử dụng mail <Text style={styles.underline}>hcmut.edu.vn</Text> để đăng nhập</Text>
         </View>
         <View style={[styles.termsDiv, { height: normalize(153, 'height', width, height) }]}>
-          <Text style={[styles.termsText, { 
+          <Text style={[styles.termsText, {
             fontSize: normalize(15, 'width', width, height),
-            fontWeight:'500',
+            fontWeight: '500',
             paddingHorizontal: normalize(20, 'width', width, height),
             lineHeight: normalize(24, 'height', width, height),
           }]}>Bằng việc đăng nhập, bạn đồng ý với Điều khoản Dịch vụ và Chính sách bảo mật của chúng tôi</Text>
@@ -210,7 +218,7 @@ const styles = StyleSheet.create({
   termsDiv: {
     justifyContent: 'flex-end',
     alignItems: 'center',
-    
+
   },
   termsText: {
     color: '#718096',

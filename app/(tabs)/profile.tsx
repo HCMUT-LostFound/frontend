@@ -55,6 +55,7 @@ export default function Profile() {
       }
 
       const data: Item[] = await res.json()
+      console.log(data)
       setItems(data)
     } catch (err) {
       console.error(err)

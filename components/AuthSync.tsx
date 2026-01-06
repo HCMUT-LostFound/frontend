@@ -1,6 +1,6 @@
 import { useAuth, useUser } from '@clerk/clerk-expo'
 import { useEffect, useRef } from 'react'
-import {jwtDecode} from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 

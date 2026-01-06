@@ -3,6 +3,29 @@ import { Stack, Redirect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import AuthSync from "@/components/AuthSync";
 import { ProfileProvider } from "@/contexts/profileContext";
+import * as Sentry from '@sentry/react-native';
+import { useDomainGuard } from "@/hooks/useDomainGuard"
+
+Sentry.init({
+  dsn: 'https://405fee4d9671113875fb839afd371d19@o4510499923427328.ingest.us.sentry.io/4510658692775936',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  tracesSampleRate: 1.0,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 const tokenCache = {
   async getToken(key: string) {
@@ -34,10 +57,15 @@ function AuthGate() {
 
   return null
 }
-
-export default function RootLayout() {
+function DomainGate() {
+  useDomainGuard()
+  return null
+}
+export default Sentry.wrap(function RootLayout() {
+  // useDomainGuard()
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+      <DomainGate />
       <AuthSync />
       <AuthGate />
       <ProfileProvider>
@@ -59,4 +87,4 @@ export default function RootLayout() {
       </ProfileProvider>
     </ClerkProvider>
   );
-}
+});

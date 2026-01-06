@@ -49,61 +49,62 @@ const ReportFoundItem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [date, setDate] = useState(new Date());
+  const [showCampusModal, setShowCampusModal] = useState(false);
 
- const availableTags = [
-  // Loại đồ vật phổ biến
-  'Ba lô',
-  'Túi xách',
-  'Ví tiền',
-  'Điện thoại',
-  'Laptop',
-  'Tai nghe',
-  'Sạc pin',
-  'Bình nước',
-  'Ô (dù)',
-  'Chìa khóa',
-  'Thẻ sinh viên',
-  'Sách vở',
-  'Áo khoác',
-  'Mũ nón',
-  'Kính mắt',
+  const availableTags = [
+    // Loại đồ vật phổ biến
+    'Ba lô',
+    'Túi xách',
+    'Ví tiền',
+    'Điện thoại',
+    'Laptop',
+    'Tai nghe',
+    'Sạc pin',
+    'Bình nước',
+    'Ô (dù)',
+    'Chìa khóa',
+    'Thẻ sinh viên',
+    'Sách vở',
+    'Áo khoác',
+    'Mũ nón',
+    'Kính mắt',
 
-  // Màu sắc
-  'Đen',
-  'Trắng',
-  'Xanh',
-  'Đỏ',
-  'Xám',
-  'Nâu',
-  'Hồng',
+    // Màu sắc
+    'Đen',
+    'Trắng',
+    'Xanh',
+    'Đỏ',
+    'Xám',
+    'Nâu',
+    'Hồng',
 
-  // Chất liệu / Đặc điểm
-  'Da',
-  'Vải',
-  'Nhựa',
-  'Kim loại',
+    // Chất liệu / Đặc điểm
+    'Da',
+    'Vải',
+    'Nhựa',
+    'Kim loại',
 
-  // Vị trí (mới thêm)
-  'Thư viện',
-  'Thư viện Tạ Quang Bửu',
-  'Căng tin',
-  'Nhà ăn sinh viên',
-  'Ký túc xá',
-  'KTX Khu A',
-  'KTX Khu B',
-  'Giảng đường',
-  'Tòa nhà H1',
-  'Tòa nhà H2',
-  'Tòa nhà H3',
-  'Tòa nhà H6',
-  'Sân bóng đá',
-  'Sân thể thao',
-  'Bể bơi',
-  'Khu tự học',
-  'Cổng chính',
-  'Phòng thí nghiệm',
-  'Hành lang',
-].sort()
+    // Vị trí (mới thêm)
+    'Thư viện',
+    'Thư viện Tạ Quang Bửu',
+    'Căng tin',
+    'Nhà ăn sinh viên',
+    'Ký túc xá',
+    'KTX Khu A',
+    'KTX Khu B',
+    'Giảng đường',
+    'Tòa nhà H1',
+    'Tòa nhà H2',
+    'Tòa nhà H3',
+    'Tòa nhà H6',
+    'Sân bóng đá',
+    'Sân thể thao',
+    'Bể bơi',
+    'Khu tự học',
+    'Cổng chính',
+    'Phòng thí nghiệm',
+    'Hành lang',
+  ].sort()
 
   const handleChoosePhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -124,7 +125,7 @@ const ReportFoundItem = () => {
       }
     }
   };
-  
+
   const handleTakePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -150,7 +151,7 @@ const ReportFoundItem = () => {
     newImages.splice(index, 1);
     setImages(newImages);
   };
-  
+
   const formatDate = (date: Date) => {
     const dd = String(date.getDate()).padStart(2, '0');
     const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -352,10 +353,13 @@ const ReportFoundItem = () => {
                   value={location}
                   onChangeText={setLocation}
                 />
-                <View style={styles.buildingDropdown}>
+                <TouchableOpacity
+                  style={styles.buildingDropdown}
+                  onPress={() => setShowCampusModal(true)}
+                >
                   <Text style={styles.buildingText}>{building}</Text>
                   <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
-                </View>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -483,6 +487,69 @@ const ReportFoundItem = () => {
           onChange={onChangeDate}
         />
       )}
+
+      {/* Campus Selection Modal */}
+      <Modal
+        visible={showCampusModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCampusModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.campusModalContent}>
+            <Text style={styles.campusModalTitle}>Chọn cơ sở</Text>
+
+            <TouchableOpacity
+              style={[
+                styles.campusOption,
+                building === 'CS1' && styles.campusOptionSelected
+              ]}
+              onPress={() => {
+                setBuilding('CS1');
+                setShowCampusModal(false);
+              }}
+            >
+              <Text style={[
+                styles.campusOptionText,
+                building === 'CS1' && styles.campusOptionTextSelected
+              ]}>
+                CS1 - Cơ sở 1
+              </Text>
+              {building === 'CS1' && (
+                <Ionicons name="checkmark-circle" size={24} color="#2B6CB0" />
+              )}
+            </TouchableOpacity>
+
+            < TouchableOpacity
+              style={[
+                styles.campusOption,
+                building === 'CS2' && styles.campusOptionSelected
+              ]}
+              onPress={() => {
+                setBuilding('CS2');
+                setShowCampusModal(false);
+              }}
+            >
+              <Text style={[
+                styles.campusOptionText,
+                building === 'CS2' && styles.campusOptionTextSelected
+              ]}>
+                CS2 - Cơ sở 2
+              </Text>
+              {building === 'CS2' && (
+                <Ionicons name="checkmark-circle" size={24} color="#2B6CB0" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.campusCancelButton}
+              onPress={() => setShowCampusModal(false)}
+            >
+              <Text style={styles.campusCancelButtonText}>Hủy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -755,6 +822,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#718096',
     fontWeight: '600',
+  },
+  campusModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 350,
+  },
+  campusModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  campusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#F7FAFC',
+    marginBottom: 12,
+  },
+  campusOptionSelected: {
+    backgroundColor: '#EBF8FF',
+    borderWidth: 2,
+    borderColor: '#2B6CB0',
+  },
+  campusOptionText: {
+    fontSize: 16,
+    color: '#000000',
+    fontWeight: '500',
+  },
+  campusOptionTextSelected: {
+    color: '#2B6CB0',
+    fontWeight: '600',
+  },
+  campusCancelButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  campusCancelButtonText: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '500',
   },
 });
 

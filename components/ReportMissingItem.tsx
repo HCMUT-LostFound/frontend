@@ -49,61 +49,92 @@ const ReportMissingItem = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [date, setDate] = useState(new Date());
+  const [showCampusModal, setShowCampusModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
- const availableTags = [
-  // Loại đồ vật phổ biến
-  'Ba lô',
-  'Túi xách',
-  'Ví tiền',
-  'Điện thoại',
-  'Laptop',
-  'Tai nghe',
-  'Sạc pin',
-  'Bình nước',
-  'Ô (dù)',
-  'Chìa khóa',
-  'Thẻ sinh viên',
-  'Sách vở',
-  'Áo khoác',
-  'Mũ nón',
-  'Kính mắt',
+  const tagCategories = [
+    {
+      title: 'Loại đồ vật',
+      data: [
+        'Ba lô', 'Túi xách', 'Ví tiền', 'Điện thoại', 'Laptop', 'Tai nghe',
+        'Sạc pin', 'Bình nước', 'Ô (dù)', 'Chìa khóa', 'Thẻ sinh viên',
+        'Sách vở', 'Áo khoác', 'Mũ nón', 'Kính mắt',
+      ],
+    },
+    {
+      title: 'Màu sắc',
+      data: ['Đen', 'Trắng', 'Xanh', 'Đỏ', 'Xám', 'Nâu', 'Hồng'],
+    },
+    {
+      title: 'Chất liệu / Đặc điểm',
+      data: ['Da', 'Vải', 'Nhựa', 'Kim loại'],
+    },
+    {
+      title: 'Địa điểm',
+      data: [
+        'Thư viện', 'Thư viện Tạ Quang Bửu', 'Căng tin', 'Nhà ăn sinh viên',
+        'Ký túc xá', 'KTX Khu A', 'KTX Khu B', 'Giảng đường', 'Tòa nhà H1',
+        'Tòa nhà H2', 'Tòa nhà H3', 'Tòa nhà H6', 'Sân bóng đá',
+        'Nhà học thể dục', 'Cổng phụ', 'Khu tự học', 'Cổng chính',
+        'Phòng thí nghiệm', 'Hành lang',
+      ],
+    },
+  ]
 
-  // Màu sắc
-  'Đen',
-  'Trắng',
-  'Xanh',
-  'Đỏ',
-  'Xám',
-  'Nâu',
-  'Hồng',
+  const availableTags = [
+    // Loại đồ vật phổ biến
+    'Ba lô',
+    'Túi xách',
+    'Ví tiền',
+    'Điện thoại',
+    'Laptop',
+    'Tai nghe',
+    'Sạc pin',
+    'Bình nước',
+    'Ô (dù)',
+    'Chìa khóa',
+    'Thẻ sinh viên',
+    'Sách vở',
+    'Áo khoác',
+    'Mũ nón',
+    'Kính mắt',
 
-  // Chất liệu / Đặc điểm
-  'Da',
-  'Vải',
-  'Nhựa',
-  'Kim loại',
+    // Màu sắc
+    'Đen',
+    'Trắng',
+    'Xanh',
+    'Đỏ',
+    'Xám',
+    'Nâu',
+    'Hồng',
 
-  // Vị trí (mới thêm)
-  'Thư viện',
-  'Thư viện Tạ Quang Bửu',
-  'Căng tin',
-  'Nhà ăn sinh viên',
-  'Ký túc xá',
-  'KTX Khu A',
-  'KTX Khu B',
-  'Giảng đường',
-  'Tòa nhà H1',
-  'Tòa nhà H2',
-  'Tòa nhà H3',
-  'Tòa nhà H6',
-  'Sân bóng đá',
-  'Sân thể thao',
-  'Bể bơi',
-  'Khu tự học',
-  'Cổng chính',
-  'Phòng thí nghiệm',
-  'Hành lang',
-].sort()
+    // Chất liệu / Đặc điểm
+    'Da',
+    'Vải',
+    'Nhựa',
+    'Kim loại',
+
+    // Vị trí (mới thêm)
+    'Thư viện',
+    'Thư viện Tạ Quang Bửu',
+    'Căng tin',
+    'Nhà ăn sinh viên',
+    'Ký túc xá',
+    'KTX Khu A',
+    'KTX Khu B',
+    'Giảng đường',
+    'Tòa nhà H1',
+    'Tòa nhà H2',
+    'Tòa nhà H3',
+    'Tòa nhà H6',
+    'Sân bóng đá',
+    'Sân thể thao',
+    'Bể bơi',
+    'Khu tự học',
+    'Cổng chính',
+    'Phòng thí nghiệm',
+    'Hành lang',
+  ].sort()
 
   const handleChoosePhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -260,151 +291,142 @@ const ReportMissingItem = () => {
               Vui lòng cung cấp thông tin chi tiết để giúp tìm lại đồ của bạn.
             </Text>
 
-          {/* Tên món đồ */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tên món đồ</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ví dụ: Bình nước, ..."
-              placeholderTextColor="#718096"
-              value={itemName}
-              onChangeText={setItemName}
-            />
-          </View>
-
-          {/* Mô tả chi tiết */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Mô tả chi tiết</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Mô tả chi tiết màu sắc, hình dáng, tình trạng, ..."
-              placeholderTextColor="#718096"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={5}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Hình ảnh (nếu có) */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Hình ảnh (nếu có)</Text>
-
-            {images.length === 0 ? (
-              <TouchableOpacity style={styles.uploadBox} onPress={handleChoosePhoto}>
-                <Ionicons name="cloud-upload-outline" size={40} color="#718096" />
-                <Text style={styles.uploadText}>Nhấn để tải ảnh lên</Text>
-                <Text style={styles.uploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
-              </TouchableOpacity>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageList}>
-                {images.map((uri, index) => (
-                  <View key={index} style={styles.imageWrapper}>
-                    <Image source={{ uri }} style={styles.uploadedImage} />
-                    <TouchableOpacity
-                      style={styles.removeImageBtn}
-                      onPress={() => removeImage(index)}
-                    >
-                      <Ionicons name="close-circle" size={24} color="#EDF2F7" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                {images.length < 5 && (
-                  <TouchableOpacity style={styles.addMoreButton} onPress={handleChoosePhoto}>
-                    <Ionicons name="add" size={32} color="#718096" />
-                  </TouchableOpacity>
-                )}
-              </ScrollView>
-            )}
-          </View>
-
-          {/* Vị trí nhìn thấy lần cuối */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vị trí nhìn thấy lần cuối</Text>
-            <View style={styles.locationRow}>
+            {/* Tên món đồ */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Tên món đồ</Text>
               <TextInput
-                style={[styles.input, styles.locationInput]}
-                placeholder="Ví dụ: H1-101, Thư viện, ..."
-                placeholderTextColor="#718096"
-                value={location}
-                onChangeText={setLocation}
-              />
-              <View style={styles.buildingDropdown}>
-                <Text style={styles.buildingText}>{building}</Text>
-                <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
-              </View>
-            </View>
-          </View>
-
-          {/* Thời điểm bị mất */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Thời điểm bị mất</Text>
-            <View style={styles.dateInputWrapper}>
-              <TouchableOpacity
                 style={styles.input}
-                activeOpacity={0.7}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={{ color: dateLost ? '#000' : '#718096' }}>
-                  {dateLost || 'Chọn ngày'}
-                </Text>
-              </TouchableOpacity>
-              <MaterialIcons
-                name="calendar-today"
-                size={20}
-                color="#718096"
-                style={styles.calendarIcon}
+                placeholder="Ví dụ: Bình nước, ..."
+                placeholderTextColor="#718096"
+                value={itemName}
+                onChangeText={setItemName}
               />
             </View>
-          </View>
 
-          {/* Tags */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tags</Text>
-            <Text style={styles.tagSubtitle}>
-              Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ dàng hơn
-            </Text>
+            {/* Mô tả chi tiết */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Mô tả chi tiết</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Mô tả chi tiết màu sắc, hình dáng, tình trạng, ..."
+                placeholderTextColor="#718096"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+              />
+            </View>
 
-            <TouchableOpacity
-              style={styles.tagDropdown}
-              onPress={() => setShowTagDropdown(!showTagDropdown)}
-            >
-              <Text style={styles.tagDropdownText}>
-                {selectedTags.length > 0 ? `Đã chọn ${selectedTags.length} tags` : 'Chọn các tags phù hợp'}
+            {/* Hình ảnh (nếu có) */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Hình ảnh (nếu có)</Text>
+
+              {images.length === 0 ? (
+                <TouchableOpacity style={styles.uploadBox} onPress={handleChoosePhoto}>
+                  <Ionicons name="cloud-upload-outline" size={40} color="#718096" />
+                  <Text style={styles.uploadText}>Nhấn để tải ảnh lên</Text>
+                  <Text style={styles.uploadSubtext}>PNG, JPG (Tối đa 5MB)</Text>
+                </TouchableOpacity>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageList}>
+                  {images.map((uri, index) => (
+                    <View key={index} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.uploadedImage} />
+                      <TouchableOpacity
+                        style={styles.removeImageBtn}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#EDF2F7" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  {images.length < 5 && (
+                    <TouchableOpacity style={styles.addMoreButton} onPress={handleChoosePhoto}>
+                      <Ionicons name="add" size={32} color="#718096" />
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
+              )}
+            </View>
+
+            {/* Vị trí nhìn thấy lần cuối */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Vị trí nhìn thấy lần cuối</Text>
+              <View style={styles.locationRow}>
+                <TextInput
+                  style={[styles.input, styles.locationInput]}
+                  placeholder="Ví dụ: H1-101, Thư viện, ..."
+                  placeholderTextColor="#718096"
+                  value={location}
+                  onChangeText={setLocation}
+                />
+                <TouchableOpacity
+                  style={styles.buildingDropdown}
+                  onPress={() => setShowCampusModal(true)}
+                >
+                  <Text style={styles.buildingText}>{building}</Text>
+                  <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Thời điểm bị mất */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Thời điểm bị mất</Text>
+              <View style={styles.dateInputWrapper}>
+                <TouchableOpacity
+                  style={styles.input}
+                  activeOpacity={0.7}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={{ color: dateLost ? '#000' : '#718096' }}>
+                    {dateLost || 'Chọn ngày'}
+                  </Text>
+                </TouchableOpacity>
+                <MaterialIcons
+                  name="calendar-today"
+                  size={20}
+                  color="#718096"
+                  style={styles.calendarIcon}
+                />
+              </View>
+            </View>
+
+            {/* Tags */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Tags</Text>
+              <Text style={styles.tagSubtitle}>
+                Thêm các thẻ tags về món đồ giúp người khác tìm kiếm dễ dàng hơn
               </Text>
-              <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
-            </TouchableOpacity>
 
-            {selectedTags.length > 0 && (
-              <View style={styles.selectedTagsContainer}>
-                {selectedTags.map((tag, index) => (
-                  <View key={index} style={styles.tagChip}>
-                    <Text style={styles.tagChipText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+              <TouchableOpacity
+                style={styles.tagDropdown}
+                onPress={() => setShowTagDropdown(true)}
+              >
+                <Text style={styles.tagDropdownText}>
+                  {selectedTags.length > 0 ? `Đã chọn ${selectedTags.length} tags` : 'Chọn các tags phù hợp'}
+                </Text>
+                <MaterialIcons name="keyboard-arrow-down" size={24} color="#000000" />
+              </TouchableOpacity>
 
-            {showTagDropdown && (
-              <View style={styles.tagDropdownList}>
-                {availableTags.map((tag, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.tagOption}
-                    onPress={() => toggleTag(tag)}
-                  >
-                    <Text style={styles.tagOptionText}>{tag}</Text>
-                    {selectedTags.includes(tag) && (
-                      <Ionicons name="checkmark" size={20} color="#2B6CB0" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+              {selectedTags.length > 0 && (
+                <View style={styles.selectedTagsContainer}>
+                  {selectedTags.map((tag, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.tagChipRemovable}
+                      onPress={() => toggleTag(tag)}
+                    >
+                      <Text style={styles.tagChipText}>{tag}</Text>
+                      <Ionicons name="close-circle" size={16} color="#718096" />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Submit Button - cố định ở dưới cùng */}
@@ -461,6 +483,209 @@ const ReportMissingItem = () => {
           onChange={onChangeDate}
         />
       )}
+
+      {/* Campus Selection Modal */}
+      <Modal
+        visible={showCampusModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCampusModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.campusModalContent}>
+            <Text style={styles.campusModalTitle}>Chọn cơ sở</Text>
+
+            <TouchableOpacity
+              style={[
+                styles.campusOption,
+                building === 'CS1' && styles.campusOptionSelected
+              ]}
+              onPress={() => {
+                setBuilding('CS1');
+                setShowCampusModal(false);
+              }}
+            >
+              <Text style={[
+                styles.campusOptionText,
+                building === 'CS1' && styles.campusOptionTextSelected
+              ]}>
+                CS1 - Cơ sở 1
+              </Text>
+              {building === 'CS1' && (
+                <Ionicons name="checkmark-circle" size={24} color="#2B6CB0" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.campusOption,
+                building === 'CS2' && styles.campusOptionSelected
+              ]}
+              onPress={() => {
+                setBuilding('CS2');
+                setShowCampusModal(false);
+              }}
+            >
+              <Text style={[
+                styles.campusOptionText,
+                building === 'CS2' && styles.campusOptionTextSelected
+              ]}>
+                CS2 - Cơ sở 2
+              </Text>
+              {building === 'CS2' && (
+                <Ionicons name="checkmark-circle" size={24} color="#2B6CB0" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.campusCancelButton}
+              onPress={() => setShowCampusModal(false)}
+            >
+              <Text style={styles.campusCancelButtonText}>Hủy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Tag Selection Modal */}
+      <Modal visible={showTagDropdown} animationType="slide">
+        <SafeAreaView style={styles.tagModalContainer}>
+          {/* Header */}
+          <View style={styles.tagModalHeader}>
+            <TouchableOpacity onPress={() => {
+              setShowTagDropdown(false);
+              setSearchTerm('');
+            }}>
+              <Ionicons name="close" size={28} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.tagModalTitle}>Chọn tags</Text>
+            {selectedTags.length > 0 && (
+              <TouchableOpacity onPress={() => setSelectedTags([])}>
+                <Text style={styles.clearAllText}>Xóa tất cả</Text>
+              </TouchableOpacity>
+            )}
+            {selectedTags.length === 0 && <View style={{ width: 70 }} />}
+          </View>
+
+          {/* Search Bar */}
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={20} color="#718096" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Tìm kiếm tags..."
+              placeholderTextColor="#718096"
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+            />
+            {searchTerm.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchTerm('')}>
+                <Ionicons name="close-circle" size={20} color="#718096" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Selected Tags Count */}
+          {selectedTags.length > 0 && (
+            <View style={styles.selectedCount}>
+              <Ionicons name="checkmark-circle" size={20} color="#2B6CB0" />
+              <Text style={styles.selectedCountText}>
+                Đã chọn {selectedTags.length} tags
+              </Text>
+            </View>
+          )}
+
+          {/* Tags by Category */}
+          <ScrollView
+            style={styles.tagsCategoriesScroll}
+            showsVerticalScrollIndicator={false}
+          >
+            {searchTerm.length > 0 ? (
+              // Search Results
+              <View style={styles.categorySection}>
+                <Text style={styles.categoryTitle}>Kết quả tìm kiếm</Text>
+                <View style={styles.categoryTags}>
+                  {availableTags
+                    .filter(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(tag => {
+                      const selected = selectedTags.includes(tag);
+                      return (
+                        <TouchableOpacity
+                          key={tag}
+                          style={[
+                            styles.filterTag,
+                            selected && styles.filterTagSelected,
+                          ]}
+                          onPress={() => toggleTag(tag)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterTagText,
+                              selected && styles.filterTagTextSelected,
+                            ]}
+                          >
+                            {tag}
+                          </Text>
+                          {selected && (
+                            <Ionicons name="checkmark" size={16} color="#fff" />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+              </View>
+            ) : (
+              // Categories
+              tagCategories.map(category => (
+                <View key={category.title} style={styles.categorySection}>
+                  <Text style={styles.categoryTitle}>{category.title}</Text>
+                  <View style={styles.categoryTags}>
+                    {category.data.map(tag => {
+                      const selected = selectedTags.includes(tag);
+                      return (
+                        <TouchableOpacity
+                          key={tag}
+                          style={[
+                            styles.filterTag,
+                            selected && styles.filterTagSelected,
+                          ]}
+                          onPress={() => toggleTag(tag)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterTagText,
+                              selected && styles.filterTagTextSelected,
+                            ]}
+                          >
+                            {tag}
+                          </Text>
+                          {selected && (
+                            <Ionicons name="checkmark" size={16} color="#fff" />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+
+          {/* Bottom Action Button */}
+          <View style={styles.tagModalFooter}>
+            <TouchableOpacity
+              style={styles.confirmTagButton}
+              onPress={() => {
+                setShowTagDropdown(false);
+                setSearchTerm('');
+              }}
+            >
+              <Text style={styles.confirmTagButtonText}>
+                Xác nhận ({selectedTags.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -709,6 +934,180 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     color: '#718096',
+    fontWeight: '600',
+  },
+  campusModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 350,
+  },
+  campusModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  campusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#F7FAFC',
+    marginBottom: 12,
+  },
+  campusOptionSelected: {
+    backgroundColor: '#EBF8FF',
+    borderWidth: 2,
+    borderColor: '#2B6CB0',
+  },
+  campusOptionText: {
+    fontSize: 16,
+    color: '#000000',
+    fontWeight: '500',
+  },
+  campusOptionTextSelected: {
+    color: '#2B6CB0',
+    fontWeight: '600',
+  },
+  campusCancelButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  campusCancelButtonText: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '500',
+  },
+
+  // Tag Chip Removable
+  tagChipRemovable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EDF2F7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+  },
+
+  // Tag Modal Styles
+  tagModalContainer: {
+    flex: 1,
+    backgroundColor: '#F7FAFC',
+  },
+  tagModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  tagModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+  },
+  clearAllText: {
+    fontSize: 14,
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#000',
+  },
+  selectedCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#EBF8FF',
+    borderLeftWidth: 3,
+    borderLeftColor: '#2B6CB0',
+    marginBottom: 16,
+  },
+  selectedCountText: {
+    fontSize: 14,
+    color: '#2B6CB0',
+    fontWeight: '600',
+  },
+  tagsCategoriesScroll: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  categorySection: {
+    marginBottom: 24,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E1E1E',
+    marginBottom: 12,
+  },
+  categoryTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  filterTag: {
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  filterTagSelected: {
+    backgroundColor: '#2B6CB0',
+  },
+  filterTagText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  filterTagTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  tagModalFooter: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  confirmTagButton: {
+    backgroundColor: '#2B6CB0',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  confirmTagButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
