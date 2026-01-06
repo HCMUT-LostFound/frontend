@@ -50,71 +50,23 @@ export default function Home() {
 
   const loadItems = async () => {
     setLoading(true)
-    // try {
-    //   const token = await getToken()
-    //   if (!token) return
-    //   const data = await fetchPublicItems(token)
-    //   setItems(data)
-    // } catch (err) {
-    //   console.error(err)
-    // } finally {
-    //   setLoading(false)
-    // }
+    try {
+      const token = await getToken()
+      if (!token) return
+      const data = await fetchPublicItems(token)
+      // console.log(data)
+      setItems(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
 
-
-    // MOCK DATA 
-    const mockData = [
-      {
-        id: 1,
-        type: 'lost' as const,
-        title: 'Balo da',
-        location: 'CS2, H1-304',
-        campus: '',
-        lostAt: '2025-10-26T00:00:00Z',
-        imageUrls: [
-          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
-        ],
-        tags: ['Ba lô', 'Da', 'Nâu'],
-        reporterName: 'Lê Văn B',
-        description: 'Balo da màu nâu, của X, bên trong có 2 cuốn sách, viết, chìa khóa.',
-        detailLocation: 'CS1, Thư viện',
-      },
-      {
-        id: 2,
-        type: 'lost' as const,
-        title: 'Balo da',
-        location: 'CS2, H1-304',
-        campus: '',
-        lostAt: '2025-10-26T00:00:00Z',
-        imageUrls: [
-          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
-        ],
-        tags: ['Ba lô', 'Da', 'Nâu'],
-        reporterName: 'Lê Văn B',
-        description: 'Balo da màu nâu, của X, bên trong có 2 cuốn sách, viết, chìa khóa.',
-        detailLocation: 'CS1, Thư viện',
-      },
-      {
-        id: 3,
-        type: 'lost' as const,
-        title: 'Balo da',
-        location: 'CS2, H1-304',
-        campus: '',
-        lostAt: '2025-10-26T00:00:00Z',
-        imageUrls: [
-          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400',
-        ],
-        tags: ['Ba lô', 'Da', 'Nâu'],
-        reporterName: 'Lê Văn B',
-        description: 'Balo da màu nâu, của X, bên trong có 2 cuốn sách, viết, chìa khóa.',
-        detailLocation: 'CS1, Thư viện',
-      },
-    ]
     // Delay giả lập loading
-    await new Promise(resolve => setTimeout(resolve, 800))
+    // await new Promise(resolve => setTimeout(resolve, 800))
 
-    setItems(mockData)
-    setLoading(false)
+    // setItems(items)
+    // setLoading(false)
   }
 
   useFocusEffect(
@@ -386,7 +338,7 @@ export default function Home() {
                   </View>
                   <View style={styles.detailTextBlock}>
                     <Text style={styles.detailLabel}>Người báo mất</Text>
-                    <Text style={styles.detailValue}>{selectedItem?.reporterName}</Text>
+                    <Text style={styles.detailValue}>{selectedItem?.reporter?.fullName ?? "-"}</Text>
                   </View>
                 </View>
 
@@ -400,7 +352,12 @@ export default function Home() {
                   </View>
                   <View style={styles.detailTextBlock}>
                     <Text style={styles.detailLabel}>Địa điểm</Text>
-                    <Text style={styles.detailValue}>{selectedItem?.detailLocation}</Text>
+                    <Text style={styles.detailValue}>
+                      {selectedItem
+                        ? `${selectedItem.location}, ${selectedItem.campus}`
+                        : '—'}
+                    </Text>
+
                   </View>
                 </View>
 
