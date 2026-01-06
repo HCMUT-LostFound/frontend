@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth, useUser } from '@clerk/clerk-expo'
 
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE
+
 type Profile = {
     fullName: string
     avatarUrl: string
@@ -34,7 +36,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
             const token = await getToken()
             if (!token) return
 
-            const res = await fetch('http://10.0.212.196:8080/api/profile', {
+            const res = await fetch(`${API_BASE}/api/profile`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

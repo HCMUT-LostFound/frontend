@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@clerk/clerk-expo'
 import { useFocusEffect } from '@react-navigation/native'
+import { useRouter } from 'expo-router'
+import { createOrGetChat } from '@/services/chatService'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 
@@ -43,6 +45,22 @@ export default function Home() {
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false)
 
   const { getToken } = useAuth()
+  const router = useRouter()
+
+  const handleChatItem = async (itemId: string) => {
+    try {
+      const token = await getToken()
+      if (!token) return
+      
+      const chat = await createOrGetChat(token, itemId)
+      // Navigate to chat tab and select this chat
+      router.push('/(tabs)/chat')
+      // Note: In a real app, you'd pass the chat ID via navigation params
+      // For now, user will need to select the chat manually
+    } catch (err) {
+      console.error('Create chat error:', err)
+    }
+  }
 
    const loadItems = async () => {
     setLoading(true)
@@ -412,6 +430,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#E8F4FD',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2B6CB0',
+  },
+  chatButtonText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2B6CB0',
   },
   tagText: {
     fontSize: 16,

@@ -1,72 +1,193 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useAuth } from '@clerk/clerk-expo'
+import { useFocusEffect } from '@react-navigation/native'
+import { fetchChats, fetchMessages, sendMessage, Chat, ChatMessage } from '@/services/chatService'
 
-interface Conversation {
-  id: string
-  name: string
-  lastMessage: string
-  time: string
-  image: string
-  isMe?: boolean
-  itemImage?: string
-  itemName?: string
-}
-
-interface Message {
-  id: string
-  sender: string
-  content: string
-  time: string
-  isMe: boolean
-}
-
-const SAMPLE_CONVERSATIONS: Conversation[] = [
-  {
-    id: '1',
-    name: 'Nguyễn Văn A',
-    lastMessage: 'Chào bạn',
-    time: '11:42',
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-    itemImage: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-    itemName: 'Balo da',
-  },
-  {
-    id: '2',
-    name: 'Lê Văn B',
-    lastMessage: 'Bạn: Mình nhặt được ở C6',
-    time: '12/11',
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-    isMe: true,
-    itemImage: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=200',
-    itemName: 'Balo da',
-  },
-]
-
-const SAMPLE_MESSAGES: Message[] = [
-  {
-    id: '1',
-    sender: 'Lê Văn B',
-    content: 'Chào bạn, tôi thấy bạn nhặt được cái ba lô màu nâu đúng không',
-    time: '20/10/2025 10:15',
-    isMe: false,
-  },
-  {
-    id: '2',
-    sender: 'Bạn',
-    content: 'Đúng rồi. Giờ mình đang ở H1.',
-    time: '20/10/2025 10:15',
-    isMe: true,
-  },
-]
-
-export default function Chat() {
+export default function ChatScreen() {
   const [searchText, setSearchText] = useState('')
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+  const [chats, setChats] = useState<Chat[]>([])
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [messageText, setMessageText] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
+  const scrollViewRef = useRef<ScrollView>(null)
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { getToken } = useAuth()
 
-  if (selectedConversation) {
+  // Load chats list
+  const loadChats = useCallback(async () => {
+    try {
+      const token = await getToken()
+      if (!token) return
+      const data = await fetchChats(token)
+      setChats(data)
+    } catch (err) {
+      console.error('Load chats error:', err)
+    }
+  }, [getToken])
+
+  // Load messages for selected chat
+  const loadMessages = useCallback(async (chatId: string, afterMessageId?: string) => {
+    try {
+      const token = await getToken()
+      if (!token) return
+      const data = await fetchMessages(token, chatId, afterMessageId)
+      if (afterMessageId) {
+        // Append new messages (avoid duplicates)
+        setMessages(prev => {
+          const existingIds = new Set(prev.map(m => m.id))
+          const newMessages = data.filter(m => !existingIds.has(m.id))
+          return [...prev, ...newMessages]
+        })
+      } else {
+        // Replace all messages
+        setMessages(data)
+      }
+      // Auto scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true })
+      }, 100)
+    } catch (err) {
+      console.error('Load messages error:', err)
+    }
+  }, [getToken])
+
+  // Start polling for new messages
+  useEffect(() => {
+    if (selectedChat) {
+      // Load initial messages
+      loadMessages(selectedChat.id)
+      
+      // Start polling every 0.5s
+      const intervalId = setInterval(() => {
+        setMessages(currentMessages => {
+          const lastMessageId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : undefined
+          // Load new messages asynchronously
+          getToken().then(token => {
+            if (token) {
+              fetchMessages(token, selectedChat.id, lastMessageId).then(newMessages => {
+                if (newMessages.length > 0) {
+                  setMessages(prev => {
+                    const existingIds = new Set(prev.map(m => m.id))
+                    const uniqueNew = newMessages.filter(m => !existingIds.has(m.id))
+                    return [...prev, ...uniqueNew]
+                  })
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true })
+                  }, 100)
+                }
+              }).catch(() => {})
+            }
+          })
+          return currentMessages
+        })
+      }, 500)
+      
+      pollingIntervalRef.current = intervalId
+      
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+        }
+      }
+    } else {
+      // Stop polling when no chat selected
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [selectedChat?.id, getToken])
+
+  // Load chats when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadChats()
+      return () => {
+        // Cleanup
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current)
+        }
+      }
+    }, [loadChats])
+  )
+
+  // Handle send message
+  const handleSendMessage = async () => {
+    if (!selectedChat || !messageText.trim() || sending) return
+    
+    setSending(true)
+    try {
+      const token = await getToken()
+      if (!token) return
+      
+      const newMessage = await sendMessage(token, selectedChat.id, messageText.trim())
+      setMessageText('')
+      
+      // Add message to list immediately
+      setMessages(prev => [...prev, newMessage])
+      
+      // Reload chats to update last message
+      loadChats()
+      
+      // Auto scroll
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true })
+      }, 100)
+    } catch (err) {
+      console.error('Send message error:', err)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  // Format time
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    
+    if (days === 0) {
+      return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    } else if (days < 7) {
+      return date.toLocaleDateString('vi-VN', { weekday: 'short' })
+    } else {
+      return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+    }
+  }
+
+  // Filter chats by search
+  const filteredChats = chats.filter(chat => {
+    if (!searchText.trim()) return true
+    const searchLower = searchText.toLowerCase()
+    return (
+      chat.otherUser?.fullName.toLowerCase().includes(searchLower) ||
+      chat.itemTitle?.toLowerCase().includes(searchLower) ||
+      chat.lastMessage?.content.toLowerCase().includes(searchLower)
+    )
+  })
+
+  // Get current user ID (we'll get it from auth)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  useEffect(() => {
+    getToken().then(token => {
+      if (token) {
+        // Decode token to get user ID (simplified - in real app use proper JWT decode)
+        fetch(`${process.env.EXPO_PUBLIC_API_BASE}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => setCurrentUserId(data.id))
+        .catch(() => {})
+      }
+    })
+  }, [getToken])
+
+  if (selectedChat) {
     return (
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView 
@@ -75,37 +196,70 @@ export default function Chat() {
         >
           {/* Header */}
           <View style={styles.chatHeader}>
-            <TouchableOpacity onPress={() => setSelectedConversation(null)} style={styles.backButton}>
+            <TouchableOpacity onPress={() => setSelectedChat(null)} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#333" />
             </TouchableOpacity>
-            <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={28} color="#999" />
-            </View>
-            <Text style={styles.chatHeaderName}>{selectedConversation.name}</Text>
+            {selectedChat.otherUser?.avatarUrl ? (
+              <Image 
+                source={{ uri: selectedChat.otherUser.avatarUrl }} 
+                style={styles.avatarCircle}
+              />
+            ) : (
+              <View style={styles.avatarCircle}>
+                <Ionicons name="person" size={28} color="#999" />
+              </View>
+            )}
+            <Text style={styles.chatHeaderName}>
+              {selectedChat.otherUser?.fullName || 'Người dùng'}
+            </Text>
           </View>
 
-          <ScrollView style={styles.messagesContainer} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            ref={scrollViewRef}
+            style={styles.messagesContainer} 
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
             {/* Item Info */}
-            <View style={styles.itemInfoContainer}>
-              <Image source={{ uri: selectedConversation.itemImage }} style={styles.itemInfoImage} />
-              <Text style={styles.itemInfoText}>
-                Bắt đầu cuộc trò chuyện về <Text style={styles.itemInfoBold}>{selectedConversation.itemName}</Text>
-              </Text>
-            </View>
+            {selectedChat.itemImage && (
+              <View style={styles.itemInfoContainer}>
+                <Image 
+                  source={{ uri: selectedChat.itemImage }} 
+                  style={styles.itemInfoImage} 
+                />
+                <Text style={styles.itemInfoText}>
+                  Bắt đầu cuộc trò chuyện về <Text style={styles.itemInfoBold}>
+                    {selectedChat.itemTitle || 'món đồ này'}
+                  </Text>
+                </Text>
+              </View>
+            )}
 
             {/* Messages */}
-            {SAMPLE_MESSAGES.map((message) => (
-              <View key={message.id} style={styles.messageItem}>
-                <View style={styles.messageHeader}>
-                  <View style={styles.avatarSmall}>
-                    <Ionicons name="person" size={20} color="#999" />
+            {messages.map((message) => {
+              const isMe = message.senderId === currentUserId
+              return (
+                <View key={message.id} style={styles.messageItem}>
+                  <View style={styles.messageHeader}>
+                    {message.sender?.avatarUrl ? (
+                      <Image 
+                        source={{ uri: message.sender.avatarUrl }} 
+                        style={styles.avatarSmall}
+                      />
+                    ) : (
+                      <View style={styles.avatarSmall}>
+                        <Ionicons name="person" size={20} color="#999" />
+                      </View>
+                    )}
+                    <Text style={styles.messageSender}>
+                      {isMe ? 'Bạn' : (message.sender?.fullName || 'Người dùng')}
+                    </Text>
+                    <Text style={styles.messageTime}>{formatTime(message.createdAt)}</Text>
                   </View>
-                  <Text style={styles.messageSender}>{message.sender}</Text>
-                  <Text style={styles.messageTime}>{message.time}</Text>
+                  <Text style={styles.messageContent}>{message.content}</Text>
                 </View>
-                <Text style={styles.messageContent}>{message.content}</Text>
-              </View>
-            ))}
+              )
+            })}
           </ScrollView>
 
           {/* Input */}
@@ -116,9 +270,19 @@ export default function Chat() {
               placeholderTextColor="#999"
               value={messageText}
               onChangeText={setMessageText}
+              onSubmitEditing={handleSendMessage}
+              editable={!sending}
             />
-            <TouchableOpacity style={styles.sendButton}>
-              <Ionicons name="send" size={24} color="#1E90FF" />
+            <TouchableOpacity 
+              style={styles.sendButton}
+              onPress={handleSendMessage}
+              disabled={!messageText.trim() || sending}
+            >
+              <Ionicons 
+                name="send" 
+                size={24} 
+                color={messageText.trim() && !sending ? "#1E90FF" : "#999"} 
+              />
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -148,22 +312,41 @@ export default function Chat() {
 
         {/* Conversation List */}
         <View style={styles.conversationList}>
-          {SAMPLE_CONVERSATIONS.map((conversation) => (
-            <TouchableOpacity 
-              key={conversation.id} 
-              style={styles.conversationItem}
-              onPress={() => setSelectedConversation(conversation)}
-            >
-              <Image source={{ uri: conversation.image }} style={styles.conversationImage} />
-              <View style={styles.conversationInfo}>
-                <Text style={styles.conversationName}>{conversation.name}</Text>
-                <Text style={styles.conversationMessage} numberOfLines={1}>
-                  {conversation.lastMessage}
+          {loading ? (
+            <Text style={styles.emptyText}>Đang tải...</Text>
+          ) : filteredChats.length === 0 ? (
+            <Text style={styles.emptyText}>Chưa có cuộc trò chuyện nào.</Text>
+          ) : (
+            filteredChats.map((chat) => (
+              <TouchableOpacity 
+                key={chat.id} 
+                style={styles.conversationItem}
+                onPress={() => setSelectedChat(chat)}
+              >
+                {chat.otherUser?.avatarUrl ? (
+                  <Image 
+                    source={{ uri: chat.otherUser.avatarUrl }} 
+                    style={styles.conversationImage}
+                  />
+                ) : (
+                  <View style={styles.conversationImage}>
+                    <Ionicons name="person" size={30} color="#999" />
+                  </View>
+                )}
+                <View style={styles.conversationInfo}>
+                  <Text style={styles.conversationName}>
+                    {chat.otherUser?.fullName || 'Người dùng'}
+                  </Text>
+                  <Text style={styles.conversationMessage} numberOfLines={1}>
+                    {chat.lastMessage?.content || 'Chưa có tin nhắn'}
+                  </Text>
+                </View>
+                <Text style={styles.conversationTime}>
+                  {chat.lastMessage ? formatTime(chat.lastMessage.createdAt) : ''}
                 </Text>
-              </View>
-              <Text style={styles.conversationTime}>{conversation.time}</Text>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -222,6 +405,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 10,
     backgroundColor: '#F5F5F5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   conversationInfo: {
     flex: 1,
@@ -240,6 +425,12 @@ const styles = StyleSheet.create({
   conversationTime: {
     fontSize: 12,
     color: '#999',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 40,
+    fontSize: 14,
   },
   // Chat Detail Styles
   chatHeader: {
@@ -260,6 +451,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+    overflow: 'hidden',
   },
   chatHeaderName: {
     fontSize: 18,
@@ -305,6 +497,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+    overflow: 'hidden',
   },
   messageSender: {
     fontSize: 14,
