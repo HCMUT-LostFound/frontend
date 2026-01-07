@@ -1,6 +1,7 @@
 import { useAuth, useUser } from '@clerk/clerk-expo'
 import { useEffect, useRef } from 'react'
 import { jwtDecode } from 'jwt-decode'
+import * as Sentry from '@sentry/react-native'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 
@@ -35,6 +36,14 @@ export default function AuthSync() {
       if (res.ok) {
         lastSyncedUserId.current = user.id
         console.log('[AuthSync] Synced user', user.id)
+
+        // Set Sentry user để theo dõi hành vi và kết hợp phản hồi với dữ liệu định lượng
+        Sentry.setUser({
+          id: user.id,
+          email: user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress,
+          username: user.username || undefined,
+        })
+        console.log('[AuthSync] Sentry user set:', user.id)
       } else {
         console.log('[AuthSync] Backend status', res.status)
       }
