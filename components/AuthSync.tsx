@@ -4,6 +4,10 @@ import { jwtDecode } from 'jwt-decode'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE
 
+if (!API_BASE) {
+  console.error('[AuthSync] EXPO_PUBLIC_API_BASE is not set!')
+}
+
 type JwtPayload = {
   sub: string
 }
@@ -19,6 +23,11 @@ export default function AuthSync() {
     if (!isSignedIn || !user?.id || !isLoaded) return
     if (syncing.current) return
     if (lastSyncedUserId.current === user.id) return
+    if (!API_BASE) {
+      console.error('[AuthSync] Cannot sync: API_BASE is not set')
+      return
+    }
+    
     const sync = async () => {
       syncing.current = true
 
@@ -28,15 +37,20 @@ export default function AuthSync() {
         return
       }
       console.log('[AuthSync] token =', token)
-      const res = await fetch(`${API_BASE}/api/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
 
-      if (res.ok) {
-        lastSyncedUserId.current = user.id
-        console.log('[AuthSync] Synced user', user.id)
-      } else {
-        console.log('[AuthSync] Backend status', res.status)
+        if (res.ok) {
+          lastSyncedUserId.current = user.id
+          console.log('[AuthSync] Synced user', user.id)
+        } else {
+          console.log('[AuthSync] Backend status', res.status)
+        }
+      } catch (error) {
+        console.error('[AuthSync] Sync error:', error)
       }
 
       syncing.current = false
