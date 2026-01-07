@@ -16,12 +16,27 @@ Sentry.init({
   // Enable Logs
   enableLogs: true,
 
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1,
-  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+  // Configure Session Replay (để tìm điểm rời bỏ - drop-off points)
+  replaysSessionSampleRate: 0.1,   // Thu thập 10% phiên để xem video hành vi
+  replaysOnErrorSampleRate: 1,     // Thu thập 100% khi có lỗi
 
-  tracesSampleRate: 1.0,
+  integrations: [
+    // Mobile Replay - giúp xem lại video hành vi người dùng (tìm điểm rời bỏ)
+    Sentry.mobileReplayIntegration(),
+
+    // Feedback - thu thập phản hồi người dùng (điểm hài lòng, gợi ý)
+    Sentry.feedbackIntegration(),
+
+    // Theo dõi navigation và performance để biết user flow và thời lượng phiên
+    Sentry.reactNativeTracingIntegration(),
+  ],
+
+  // Performance Monitoring - thu thập thời lượng phiên và hiệu suất
+  tracesSampleRate: 1.0,            // Thu thập 100% dữ liệu hiệu suất
+
+  // Enable automatic session tracking
+  enableAutoSessionTracking: true,
+  sessionTrackingIntervalMillis: 30000, // Track session mỗi 30s
 
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
